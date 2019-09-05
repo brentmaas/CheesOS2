@@ -13,8 +13,7 @@ CFLAGS += \
 
 LDFLAGS += \
 	--nostdlib \
-	--no-pie \
-	--lto-O3
+	--no-pie
 
 ASFLAGS += -felf64
 
