@@ -1,0 +1,35 @@
+TARGET := kernel.elf
+BUILD := $(BUILD)/kernel
+CFLAGS += \
+	-std=gnu11 \
+	-target x86_64-unknown-elf \
+	-Iinclude \
+	-Wall \
+	-Wextra \
+	-O3 \
+	-g \
+	-nostdlib
+
+LDFLAGS += \
+	-target x86_64-unknown-elf \
+	-nostdlib \
+	-fuse-ld=lld \
+	-Wl,-no-pie
+
+ASFLAGS += -felf64
+
+KERNEL_SRC := $(shell find src/ -type f -name "*.c" -print) $(shell find src/ -type f -name "*.asm" -print)
+KERNEL_OBJ := $(KERNEL_SRC:%=$(BUILD)/object/%.o)
+
+all: $(BUILD)/$(TARGET)
+
+$(BUILD)/$(TARGET): $(KERNEL_OBJ)
+	@$(CC) $(LDFLAGS) -o $@ $^
+
+$(BUILD)/object/%.c.o: %.c
+	@mkdir -p $(dir $@)
+	@$(CC) $(CFLAGS) -c -o $@ $^
+
+$(BUILD)/object/%.asm.o: %.asm
+	@mkdir -p $(dir $@)
+	@$(AS) $(ASFLAGS) -o $@ $^
