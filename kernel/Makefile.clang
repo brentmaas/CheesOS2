@@ -1,5 +1,6 @@
 TARGET := kernel.elf
 BUILD := $(BUILD)/kernel
+LD = ld.lld
 CFLAGS += \
 	-std=gnu11 \
 	-target x86_64-unknown-elf \
@@ -11,10 +12,9 @@ CFLAGS += \
 	-nostdlib
 
 LDFLAGS += \
-	-target x86_64-unknown-elf \
-	-nostdlib \
-	-fuse-ld=lld \
-	-Wl,-no-pie
+	--nostdlib \
+	--no-pie \
+	--lto-O3
 
 ASFLAGS += -felf64
 
@@ -24,7 +24,7 @@ KERNEL_OBJ := $(KERNEL_SRC:%=$(BUILD)/object/%.o)
 all: $(BUILD)/$(TARGET)
 
 $(BUILD)/$(TARGET): $(KERNEL_OBJ)
-	@$(CC) $(LDFLAGS) -o $@ $^
+	@$(LD) $(LDFLAGS) -o $@ $^
 
 $(BUILD)/object/%.c.o: %.c
 	@mkdir -p $(dir $@)

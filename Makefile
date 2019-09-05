@@ -26,6 +26,6 @@ qemu: bootloader kernel
 		-drive if=pflash,format=raw,unit=1,file=$(OVMF_X64)/OVMF_VARS.fd,readonly=on \
 		-net none \
 		-nographic \
-		-hdd fat:rw:build/qemu/boot/
+		-hda fat:rw:build/qemu/boot/
 
 .PHONY: bootloader kernel clean qemu

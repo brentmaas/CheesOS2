@@ -2,5 +2,5 @@
 
 void paging_init(void)
 {
-    paging_disable(void);
+    paging_disable();
 }
