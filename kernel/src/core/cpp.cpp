@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include "util/core.h"
 
 /* static variable guarding routines */
 namespace __cxxabiv1
@@ -20,6 +21,7 @@ namespace __cxxabiv1
     extern "C" void __cxa_guard_abort(__guard* g)
     {
         /* TODO: implement mutex release */
+        UNUSED(g);
     }
 }
 
@@ -27,21 +29,29 @@ namespace __cxxabiv1
 void* operator new(size_t size)
 {
     /* TODO: implement memoroy allocation */
+    UNUSED(size);
+
     return (void*)0;
 }
 
 void* operator new[](size_t size)
 {
     /* TODO: implement memory allocation */
+    UNUSED(size);
+
     return (void*)0;
 }
 
 void operator delete(void* p)
 {
     /* TODO: implement memory deallocation */
+    UNUSED(p);
 }
 
 void operator delete[](void* p)
 {
     /* TODO: implement memory deallocation */
+    UNUSED(p);
 }
+
+/* TODO: define placement new and delete */

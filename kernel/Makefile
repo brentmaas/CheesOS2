@@ -3,7 +3,7 @@ SRC := src
 INCLUDE := include
 BUILD := build
 LINK := link
-COMMON_FLAGS := -I$(INCLUDE) -Wall -Wextra -O3 -nostdlib
+COMMON_FLAGS := -I$(INCLUDE) -ffreestanding -mcmodel=large -mno-red-zone -Wall -Wextra -O3 -nostdlib
 CFLAGS += $(COMMON_FLAGS) -std=gnu11
 CPPFLAGS += $(COMMON_FLAGS) -std=gnu++17
 ASFLAGS += -felf64
