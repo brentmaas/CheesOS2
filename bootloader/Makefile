@@ -1,5 +1,6 @@
 TARGET := bootloader.efi
 BUILD := $(BUILD)/bootloader
+CC := clang
 LD := lld-link
 CFLAGS += \
 	-std=gnu11 \
@@ -11,7 +12,7 @@ CFLAGS += \
 	-mno-red-zone \
 	-mno-mmx \
 	-mno-sse \
-	-Iinclude/c-efi \
+	-isystem include/c-efi \
 	-Wall \
 	-Wextra \
 	-Wno-unused-parameter \
@@ -25,14 +26,18 @@ LDFLAGS += \
 	-subsystem:efi_application
 
 BOOTLOADER_SRC := $(shell find src/ -type f -name "*.c" -print)
-BOOTLOADER_OBJ := $(BOOTLOADER_SRC:%=$(BUILD)/object/%.o)
+BOOTLOADER_OBJ := $(BOOTLOADER_SRC:%=$(BUILD)/%.o)
 
 all: $(BUILD)/$(TARGET)
 
 $(BUILD)/$(TARGET): $(BOOTLOADER_OBJ)
+	@echo [Bootloader] Linking $(subst $(BUILD)/,,$@)
 	@mkdir -p $(dir $@)
 	@$(LD) $(LDFLAGS) -out:$@ $^
 
-$(BUILD)/object/%.c.o: %.c
+$(BUILD)/%.c.o: %.c
+	@echo [Bootloader] Compiling $(subst $(BUILD)/,,$<)
 	@mkdir -p $(dir $@)
-	@$(CC) $(CFLAGS) -c -o $@ $^
+	@$(CC) -MMD $(CFLAGS) -c -o $@ $<
+
+-include $(shell find $(BUILD)/ -type f -name "*.d" -print 2>/dev/null)

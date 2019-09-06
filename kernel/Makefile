@@ -13,56 +13,42 @@ CXX := x86_64-elf-g++
 LD := x86_64-elf-gcc
 AS := nasm
 
+COMMON_FLAGS := -Iinclude -Wall -Wextra -O3 -nostdlib -Wno-unused-parameter
+CFLAGS += $(COMMON_FLAGS) -std=gnu11
+CPPFLAGS += $(COMMON_FLAGS) -std=gnu++17
+ASFLAGS += -felf64
+LDFLAGS := -nostdlib
+
 CRTBEGIN_OBJ := $(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ := $(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
-CRTI_OBJ := $(LINK)/crti.o
-CRTN_OBJ := $(LINK)/crtn.o
+CRTI_OBJ := $(BUILD)/link/crti.asm.o
+CRTN_OBJ := $(BUILD)/link/crtn.asm.o
 
-find = $(shell find $1 -type f -name $2 -print 2>/dev/null)
-objects = $(patsubst %.c, $(BUILD)/objects/%.c.o, $(call find, $1, "*.c")) $(patsubst %.asm, $(BUILD)/objects/%.asm.o, $(call find, $1, "*.asm")) $(patsubst %.cpp, $(BUILD)/objects/%.cpp.o, $(call find, $1, "*.cpp")) 
+KERNEL_SRC = $(shell find src/ -type f -regex ".*\.\(asm\|cpp\|c\)")
+KERNEL_OBJ = $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(KERNEL_SRC:%=$(BUILD)/%.o) $(CRTEND_OBJ) $(CRTN_OBJ)
 
-OBJ = $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(call objects, $(SRC)/) $(CRTEND_OBJ) $(CRTN_OBJ)
+all: $(BUILD)/$(TARGET)
 
-ESC := 
-RED := $(ESC)[1;31m
-BLUE := $(ESC)[1;34m
-CLEAR := $(ESC)[0m
-
-progress = $(info $1$(CLEAR))
-
-all: $(TARGET)
-
-$(TARGET): $(OBJ)
-	@$(call progress,$(RED)Linking $@)
+$(BUILD)/$(TARGET): $(KERNEL_OBJ)
+	@echo [Kernel] Linking $(subst $(BUILD)/,,$@)
 	@mkdir -p $(BUILD)/target
 	@$(LD) -o $@ $^ $(LDFLAGS)
 
-$(BUILD)/objects/%.c.o: %.c
-	@$(call progress,$(BLUE)Compiling $<)
+$(BUILD)/%.c.o: %.c
+	@echo [Kernel] Compiling $(subst $(BUILD)/,,$<)
 	@mkdir -p $(dir $@)
 	@$(CC) -MMD -c $(CFLAGS) -o $@ $<
 
-$(BUILD)/objects/%.asm.o: %.asm
-	@$(call progress,$(BLUE)Assembling $<)
+$(BUILD)/%.asm.o: %.asm
+	@echo [Kernel] Assembling $(subst $(BUILD)/,,$<)
 	@mkdir -p $(dir $@)
 	@$(AS) $(ASFLAGS) -o $@ $<
 
-$(BUILD)/objects/%.cpp.o: %.cpp
-	@$(call progress,$(BLUE)Compiling $<)
+$(BUILD)/%.cpp.o: %.cpp
+	@echo [Kernel] Compiling $(subst $(BUILD)/,,$<)
 	@mkdir -p $(dir $@)
 	@$(CXX) -MMD -c $(CPPFLAGS) -o $@ $<
 
-$(LINK)/%.o: $(LINK)/%.asm
-	@$(call progress,$(BLUE)Assembling $<)
-	@$(AS) $(ASFLAGS) -o $@ $<
-
-clean:
-	@echo Cleaning build files
-	@rm -rf $(BUILD)
-	@rm -f $(TARGET)
-	@rm -f $(CRTI_OBJ)
-	@rm -f $(CRTN_OBJ)
-
--include $(call find, $(BUILD)/, "*.d")
+-include $(shell find $(BUILD)/ -type f -name "*.d" -print 2>/dev/null)
 
 .PHONY: clean
