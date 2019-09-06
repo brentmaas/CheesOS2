@@ -49,6 +49,10 @@ $(BUILD)/%.cpp.o: %.cpp
 	@mkdir -p $(dir $@)
 	@$(CXX) -MMD -c $(CPPFLAGS) -o $@ $<
 
+clean:
+	@rm -rf build
+	@rm -f $(CRTI_OBJ) $(CRTN_OBJ)
+
 -include $(shell find $(BUILD)/ -type f -name "*.d" -print 2>/dev/null)
 
 .PHONY: clean
