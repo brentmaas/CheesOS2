@@ -43,5 +43,5 @@ void operator delete(void* p)
 
 void operator delete[](void* p)
 {
-    /* TODO: implement memory deallocation */l
+    /* TODO: implement memory deallocation */
 }

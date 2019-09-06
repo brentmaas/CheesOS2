@@ -12,7 +12,7 @@ bootloader:
 	@$(MAKE) -C bootloader all
 
 kernel:
-	@$(MAKE) -C kernel -f Makefile.clang all
+	@$(MAKE) -C kernel all
 
 clean:
 	@rm -rf $(BUILD)
