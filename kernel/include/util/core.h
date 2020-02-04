@@ -1,6 +1,0 @@
-#ifndef _CHEESOS2_KERNEL_INCLUDE_UTIL_CORE_H
-#define _CHEESOS2_KERNEL_INCLUDE_UTIL_CORE_H
-
-#define UNUSED(x) ((void)x)
-
-#endif
