@@ -18,7 +18,7 @@ ASMFLAGS += -felf32
 
 LDFLAGS += -T$(LINKER)/kernel.ld -ffreestanding -nostdlib
 COMMON_FLAGS += -O3 -I$(INCLUDE) -I$(INCLUDE)/libc -ffreestanding -nostdlib
-CFLAGS += $(COMMON_FLAGS) -std=gnu11
+CFLAGS += $(COMMON_FLAGS) -std=gnu11 -masm=intel
 
 QEMU ?= qemu-system-x86_64
 QEMU_COMMON_FLAGS += -no-reboot -enable-kvm -gdb tcp::1234 -cpu 486 -kernel $(TARGET)
