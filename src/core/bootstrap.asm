@@ -17,7 +17,10 @@ _start:
     mov esp, __kernel_stack_top
 
     call _init
+
+    push ebx
     call kernel_main
+    
     call _fini
     
     cli
