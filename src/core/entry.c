@@ -2,9 +2,12 @@
 #include <stddef.h>
 
 #include "vga/vga.h"
+#include "memory/gdt.h"
 
 void kernel_main() {
+    gdt_init();
     vga_init();
+
 
     vga_print("OPPERPYTHON\n");
     vga_color(VGA_COLOR_GREEN, VGA_COLOR_RED);
