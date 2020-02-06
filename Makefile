@@ -14,62 +14,49 @@ else
 endif
 
 ASM := nasm
+ASMFLAGS += -felf32
 
 LDFLAGS += -T$(LINKER)/kernel.ld -ffreestanding -nostdlib
 COMMON_FLAGS += -O3 -I$(INCLUDE) -I$(INCLUDE)/libc -ffreestanding -nostdlib
-ASMFLAGS += -felf32
 CFLAGS += $(COMMON_FLAGS) -std=gnu11
 
 QEMU ?= qemu-system-x86_64
 QEMU_COMMON_FLAGS += -no-reboot -enable-kvm -gdb tcp::1234 -cpu 486 -kernel $(TARGET)
 QEMU_DEBUG_FLAGS += $(QEMU_COMMON_FLAGS) -S
 
-rwildcard = $(foreach d, $(wildcard $1*), $(call rwildcard, $d/, $2) $(filter $(subst *, %, $2), $d))
+find = $(shell find $1 -type f -name $2 -print)
 
-CSRCS := $(patsubst $(SRC)/%, %, $(call rwildcard, $(SRC)/, *.c))
-ASMSRCS := $(patsubst $(SRC)/%, %, $(call rwildcard, $(SRC)/, *.asm))
-OBJECTS := $(CSRCS:%.c=%.o) $(ASMSRCS:%.asm=%.o)
+CSRCS = $(call find, $(SRC)/, "*.c")
+ASMSRCS = $(filter-out src/libc/ctri.asm src/libc/ctrn.asm,$(call find, $(SRC)/, "*.asm"))
+OBJECTS = $(CSRCS:%=$(BUILD)/objects/%.o) $(ASMSRCS:%=$(BUILD)/objects/%.o)
 
-OBJECTS := $(filter-out libc/crtn.o, $(filter-out libc/crti.o, $(OBJECTS)))
+all: $(BUILD)/target/$(TARGET)
 
-ESC := 
-RED := $(ESC)[1;31m
-WHITE := $(ESC)[1;37m
-BLUE := $(ESC)[1;34m
-YELLOW := $(ESC)[1;33m
-CLEAR := $(ESC)[0m
+$(BUILD)/target/$(TARGET): $(BUILD)/objects/src/libc/crti.asm.o $(OBJECTS) $(BUILD)/objects/src/libc/crtn.asm.o
+	@echo Linking $@
+	@mkdir -p $(BUILD)/target
+	@$(LD) -o $@ $^ $(LDFLAGS)
 
-progress = $(info $1$(CLEAR))
+$(BUILD)/objects/%.c.o: %.c
+	@echo Compiling $(subst $(BUILD)/,,$<)
+	@mkdir -p $(dir $@)
+	@$(CC) -MMD $(CFLAGS) -c -o $@ $<
 
-vpath %.o $(BUILD)/objects
-vpath %.c $(SRC)
-vpath %.asm $(SRC)
-
-all: $(TARGET)
-	@echo Done!
-
-$(TARGET): $(OBJECTS) libc/crti.o libc/crtn.o
-	@$(call progress,$(RED)Linking $@)
-	@$(LD) -o $@ $(BUILD)/objects/libc/crti.o $(OBJECTS:%=$(BUILD)/objects/%) $(BUILD)/objects/libc/crtn.o $(LDFLAGS)
-
-%.o: %.c
-	@$(call progress,$(BLUE)Compiling $<)
-	@mkdir -p $(BUILD)/objects/$(dir $@)
-	@$(CC) $(CFLAGS) -o $(BUILD)/objects/$@ -c $<
-
-%.o: %.asm
-	@$(call progress,$(BLUE)Assembling $<)
-	@mkdir -p $(BUILD)/objects/$(dir $@)
-	@$(ASM) $(ASMFLAGS) -o $(BUILD)/objects/$@ $<
+$(BUILD)/objects/%.asm.o: %.asm
+	@echo Assembling $(subst $(BUILD)/,,$<)
+	@mkdir -p $(dir $@)
+	@$(ASM) -MD $@.d $(ASMFLAGS) -o $@ $<
 
 clean:
 	@echo Cleaning build files
-	@rm -rf $(BUILD) $(TARGET)
+	@rm -rf $(BUILD)
 
-run: $(TARGET)
-	@$(QEMU) $(QEMU_COMMON_FLAGS)
+run: $(BUILD)/target/$(TARGET)
+	@$(QEMU) $(QEMU_COMMON_FLAGS) -kernel $<
 
-run-debug: $(TARGET)
-	@$(QEMU) $(QEMU_DEBUG_FLAGS)
+run-debug: $(BUILD)/target/$(TARGET)
+	@$(QEMU) $(QEMU_DEBUG_FLAGS) -kernel $<
+
+-include $(call find, $(BUILD)/, "*.d")
 
 .PHONY: clean
