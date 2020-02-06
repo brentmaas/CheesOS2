@@ -5,8 +5,8 @@
 #include "memory/gdt.h"
 
 void kernel_main() {
-    gdt_init();
     vga_init();
+    gdt_init();
 
 
     vga_print("OPPERPYTHON\n");

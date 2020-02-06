@@ -18,7 +18,7 @@ ASM := nasm
 LDFLAGS += -T$(LINKER)/kernel.ld -ffreestanding -nostdlib
 COMMON_FLAGS += -O3 -I$(INCLUDE) -I$(INCLUDE)/libc -ffreestanding -nostdlib
 ASMFLAGS += -felf32
-CFLAGS += $(COMMON_FLAGS) -std=c11
+CFLAGS += $(COMMON_FLAGS) -std=gnu11
 
 rwildcard = $(foreach d, $(wildcard $1*), $(call rwildcard, $d/, $2) $(filter $(subst *, %, $2), $d))
 
@@ -63,6 +63,6 @@ clean:
 	@rm -rf $(BUILD) $(TARGET)
 
 run: all
-	@qemu-system-x86_64 -cpu 486 -kernel $(TARGET)
+	@qemu-system-x86_64 -no-reboot -cpu 486 -kernel $(TARGET)
 
 .PHONY: clean
