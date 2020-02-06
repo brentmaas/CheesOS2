@@ -19,6 +19,16 @@ SECTIONS
     {
         *(.data)
     }
+
+    .init BLOCK(4K) : ALIGN(4K)
+    {
+        *(.init)
+    }
+
+    .fini BLOCK(4K) : ALIGN(4K)
+    {
+        *(.fini)
+    }
     
     .bss BLOCK(4K) : ALIGN(4K)
     {
