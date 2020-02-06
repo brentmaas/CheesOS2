@@ -19,6 +19,8 @@ CSRCS := $(patsubst $(SRC)/%, %, $(call rwildcard, $(SRC)/, *.c))
 ASMSRCS := $(patsubst $(SRC)/%, %, $(call rwildcard, $(SRC)/, *.asm))
 OBJECTS := $(CSRCS:%.c=%.o) $(ASMSRCS:%.asm=%.o)
 
+OBJECTS := $(filter-out libc/crtn.o, $(filter-out libc/crti.o, $(OBJECTS)))
+
 ESC := 
 RED := $(ESC)[1;31m
 WHITE := $(ESC)[1;37m
@@ -37,9 +39,9 @@ vpath %.asm $(SRC)
 all: $(TARGET)
 	@echo Done!
  
-$(TARGET): $(OBJECTS)
+$(TARGET): $(OBJECTS) libc/crti.o libc/crtn.o
 	@$(call progress,$(RED)Linking $@)
-	$(LD) -o $@ $(OBJECTS:%=$(BUILD)/objects/%) $(LDFLAGS)
+	$(LD) -o $@ $(BUILD)/objects/libc/crti.o $(OBJECTS:%=$(BUILD)/objects/%) $(BUILD)/objects/libc/crtn.o $(LDFLAGS)
 
 %.o: %.c
 	@$(call progress,$(BLUE)Compiling $<)
