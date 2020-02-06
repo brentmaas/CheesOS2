@@ -20,6 +20,10 @@ COMMON_FLAGS += -O3 -I$(INCLUDE) -I$(INCLUDE)/libc -ffreestanding -nostdlib
 ASMFLAGS += -felf32
 CFLAGS += $(COMMON_FLAGS) -std=gnu11
 
+QEMU ?= qemu-system-x86_64
+QEMU_COMMON_FLAGS += -no-reboot -enable-kvm -gdb tcp::1234 -cpu 486 -kernel $(TARGET)
+QEMU_DEBUG_FLAGS += $(QEMU_COMMON_FLAGS) -S
+
 rwildcard = $(foreach d, $(wildcard $1*), $(call rwildcard, $d/, $2) $(filter $(subst *, %, $2), $d))
 
 CSRCS := $(patsubst $(SRC)/%, %, $(call rwildcard, $(SRC)/, *.c))
@@ -62,7 +66,10 @@ clean:
 	@echo Cleaning build files
 	@rm -rf $(BUILD) $(TARGET)
 
-run: all
-	@qemu-system-x86_64 -no-reboot -cpu 486 -kernel $(TARGET)
+run: $(TARGET)
+	@$(QEMU) $(QEMU_COMMON_FLAGS)
+
+run-debug: $(TARGET)
+	@$(QEMU) $(QEMU_DEBUG_FLAGS)
 
 .PHONY: clean
