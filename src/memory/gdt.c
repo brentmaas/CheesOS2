@@ -1,5 +1,4 @@
 #include "memory/gdt.h"
-#include "vga/vga.h"
 
 extern void gdt_load(void*);
 
@@ -54,17 +53,8 @@ void gdt_init(void) {
         GDT_ACCESS_PRESENT | GDT_ACCESS_PRIVILEGE_3 | GDT_ACCESS_SYSTEM | GDT_ACCESS_RW
     );
 
-    vga_print("Test0\n");
-
     descriptor.size = sizeof(entries);
     descriptor.addr = entries;
 
-    vga_print("Test1\n");
-
     gdt_load(&descriptor);
-
-    vga_print("Test2\n");asm(
-            "cli\n"
-            "hlt"
-        );
 }

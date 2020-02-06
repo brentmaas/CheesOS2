@@ -3,19 +3,19 @@
 
 #include <stdint.h>
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     uint16_t size;
     void* addr;
 } gdt_descriptor;
 
-typedef struct {
-    uint16_t base_low;
+typedef struct  __attribute__((packed)) {
     uint16_t limit_low;
-    uint8_t base_high;
-    uint8_t flags : 4;
-    uint8_t limit_high : 4;
-    uint8_t access;
+    uint16_t base_low;
     uint8_t base_mid;
+    uint8_t access;
+    uint8_t limit_high : 4;
+    uint8_t flags : 4;
+    uint8_t base_high;
 } gdt_entry;
 
 typedef enum {
@@ -33,8 +33,8 @@ typedef enum {
 } gdt_access_type;
 
 typedef enum {
-    GDT_FLAG_SIZE = 16,
-    GDT_FLAG_GRANULARITY = 32
+    GDT_FLAG_SIZE = 2,
+    GDT_FLAG_GRANULARITY = 4
 } gdt_flags_type;
 
 void gdt_init(void);
