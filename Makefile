@@ -4,14 +4,8 @@ INCLUDE := include
 LINKER := linker
 BUILD := build
 
-ifeq ($(CC),clang)
-	LDFLAGS += -target i486-freestanding-elf
-	CFLAGS += -target i486-freestanding-elf
-	LD := clang
-else
-	LD := i486-elf-gcc
-	CC := i486-elf-gcc
-endif
+LD := i486-elf-gcc
+CC := i486-elf-gcc
 
 ASM := nasm
 ASMFLAGS += -felf32
