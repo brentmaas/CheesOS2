@@ -17,7 +17,7 @@ ASM := nasm
 ASMFLAGS += -felf32
 
 LDFLAGS += -T$(LINKER)/kernel.ld -ffreestanding -nostdlib
-COMMON_FLAGS +=  -I$(INCLUDE) -I$(INCLUDE)/libc -ffreestanding -nostdlib
+COMMON_FLAGS += -O3 -I$(INCLUDE) -I$(INCLUDE)/libc -ffreestanding -nostdlib
 CFLAGS += $(COMMON_FLAGS) -std=gnu11
 
 QEMU ?= qemu-system-x86_64
