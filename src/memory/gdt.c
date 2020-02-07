@@ -1,8 +1,5 @@
 #include "memory/gdt.h"
 
-#include "vga/vga.h"
-#include "debug/memdump.h"
-
 extern void gdt_load(void*);
 
 static gdt_descriptor descriptor;
@@ -27,7 +24,7 @@ void gdt_init(void) {
     //Selector 0x8, code segment kernel level
     gdt_load_entry(&entries[1],
         0,
-        0xFFFFFFFFu,
+        0xFFFFFu,
         GDT_FLAG_SIZE | GDT_FLAG_GRANULARITY,
         GDT_ACCESS_PRESENT | GDT_ACCESS_PRIVILEGE_0 | GDT_ACCESS_SYSTEM | GDT_ACCESS_EXECUTE | GDT_ACCESS_RW
     );
@@ -35,7 +32,7 @@ void gdt_init(void) {
     //Selector 0x10, data segment kernel level
     gdt_load_entry(&entries[2],
         0,
-        0xFFFFFFFFu,
+        0xFFFFFu,
         GDT_FLAG_SIZE | GDT_FLAG_GRANULARITY,
         GDT_ACCESS_PRESENT | GDT_ACCESS_PRIVILEGE_0 | GDT_ACCESS_SYSTEM | GDT_ACCESS_RW
     );
@@ -43,7 +40,7 @@ void gdt_init(void) {
     //Selector 0x18, code segment user level
     gdt_load_entry(&entries[3],
         0,
-        0xFFFFFFFFu,
+        0xFFFFFu,
         GDT_FLAG_SIZE | GDT_FLAG_GRANULARITY,
         GDT_ACCESS_PRESENT | GDT_ACCESS_PRIVILEGE_3 | GDT_ACCESS_SYSTEM | GDT_ACCESS_EXECUTE | GDT_ACCESS_RW
     );
@@ -51,21 +48,13 @@ void gdt_init(void) {
     //Selector 0x20, code segment user level
     gdt_load_entry(&entries[4],
         0,
-        0xFFFFFFFFu,
+        0xFFFFFu,
         GDT_FLAG_SIZE | GDT_FLAG_GRANULARITY,
         GDT_ACCESS_PRESENT | GDT_ACCESS_PRIVILEGE_3 | GDT_ACCESS_SYSTEM | GDT_ACCESS_RW
     );
 
-    descriptor.size = sizeof(entries);
+    descriptor.size = sizeof(entries) - 1;
     descriptor.addr = entries;
-    
-    vga_print("Table:\n");
-    debug_memdump(&entries[0], sizeof(entries));
-
-    vga_print("Descriptor:\n");
-    debug_memdump(&descriptor, sizeof(descriptor));
-
-   //asm("cli\nhlt");
 
     gdt_load(&descriptor);
 }
