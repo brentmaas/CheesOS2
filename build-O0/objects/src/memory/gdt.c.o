@@ -1,0 +1,150 @@
+	.file	"gdt.c"
+	.text
+	.local	descriptor
+	.comm	descriptor,6,4
+	.local	entries
+	.comm	entries,40,32
+	.globl	gdt_load_entry
+	.type	gdt_load_entry, @function
+gdt_load_entry:
+.LFB0:
+	.cfi_startproc
+	pushl	%ebp
+	.cfi_def_cfa_offset 8
+	.cfi_offset 5, -8
+	movl	%esp, %ebp
+	.cfi_def_cfa_register 5
+	movl	12(%ebp), %eax
+	movl	8(%ebp), %edx
+	movw	%ax, 2(%edx)
+	movl	12(%ebp), %eax
+	shrl	$16, %eax
+	movb	%al, %dl
+	movl	8(%ebp), %eax
+	movb	%dl, 4(%eax)
+	movl	12(%ebp), %eax
+	shrl	$24, %eax
+	movb	%al, %dl
+	movl	8(%ebp), %eax
+	movb	%dl, 7(%eax)
+	movl	16(%ebp), %eax
+	movl	8(%ebp), %edx
+	movw	%ax, (%edx)
+	movl	16(%ebp), %eax
+	shrl	$16, %eax
+	movb	%al, %dl
+	andl	$15, %edx
+	movl	8(%ebp), %eax
+	movb	%dl, %cl
+	andl	$15, %ecx
+	movb	6(%eax), %dl
+	andl	$-16, %edx
+	orl	%ecx, %edx
+	movb	%dl, 6(%eax)
+	movl	24(%ebp), %eax
+	movb	%al, %dl
+	movl	8(%ebp), %eax
+	movb	%dl, 5(%eax)
+	movl	20(%ebp), %eax
+	movb	%al, %dl
+	andl	$15, %edx
+	movl	8(%ebp), %eax
+	movb	%dl, %cl
+	sall	$4, %ecx
+	movb	6(%eax), %dl
+	andl	$15, %edx
+	orl	%ecx, %edx
+	movb	%dl, 6(%eax)
+	nop
+	popl	%ebp
+	.cfi_restore 5
+	.cfi_def_cfa 4, 4
+	ret
+	.cfi_endproc
+.LFE0:
+	.size	gdt_load_entry, .-gdt_load_entry
+	.section	.rodata
+.LC0:
+	.string	"Table:\n"
+.LC1:
+	.string	"Descriptor:\n"
+	.text
+	.globl	gdt_init
+	.type	gdt_init, @function
+gdt_init:
+.LFB1:
+	.cfi_startproc
+	pushl	%ebp
+	.cfi_def_cfa_offset 8
+	.cfi_offset 5, -8
+	movl	%esp, %ebp
+	.cfi_def_cfa_register 5
+	subl	$8, %esp
+	pushl	$0
+	pushl	$0
+	pushl	$0
+	pushl	$0
+	pushl	$entries
+	call	gdt_load_entry
+	addl	$20, %esp
+	pushl	$154
+	pushl	$6
+	pushl	$-1
+	pushl	$0
+	pushl	$entries+8
+	call	gdt_load_entry
+	addl	$20, %esp
+	pushl	$146
+	pushl	$6
+	pushl	$-1
+	pushl	$0
+	pushl	$entries+16
+	call	gdt_load_entry
+	addl	$20, %esp
+	pushl	$250
+	pushl	$6
+	pushl	$-1
+	pushl	$0
+	pushl	$entries+24
+	call	gdt_load_entry
+	addl	$20, %esp
+	pushl	$242
+	pushl	$6
+	pushl	$-1
+	pushl	$0
+	pushl	$entries+32
+	call	gdt_load_entry
+	addl	$20, %esp
+	movw	$40, descriptor
+	movl	$entries, descriptor+2
+	subl	$12, %esp
+	pushl	$.LC0
+	call	vga_print
+	addl	$16, %esp
+	subl	$8, %esp
+	pushl	$40
+	pushl	$entries
+	call	debug_memdump
+	addl	$16, %esp
+	subl	$12, %esp
+	pushl	$.LC1
+	call	vga_print
+	addl	$16, %esp
+	subl	$8, %esp
+	pushl	$6
+	pushl	$descriptor
+	call	debug_memdump
+	addl	$16, %esp
+	subl	$12, %esp
+	pushl	$descriptor
+	call	gdt_load
+	addl	$16, %esp
+	nop
+	leave
+	.cfi_restore 5
+	.cfi_def_cfa 4, 4
+	ret
+	.cfi_endproc
+.LFE1:
+	.size	gdt_init, .-gdt_init
+	.ident	"GCC: (GNU) 9.2.0"

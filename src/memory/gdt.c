@@ -5,8 +5,8 @@
 
 extern void gdt_load(void*);
 
-static gdt_descriptor __attribute__((section("data"))) descriptor;
-static gdt_entry __attribute__((section("data"))) entries[5];
+static gdt_descriptor descriptor;
+static gdt_entry entries[5];
 
 void gdt_load_entry(gdt_entry* entry, uint32_t base, uint32_t limit, gdt_flags_type flags, gdt_access_type access) {
     entry->base_low = base & 0xFFFFu;
@@ -58,13 +58,14 @@ void gdt_init(void) {
 
     descriptor.size = sizeof(entries);
     descriptor.addr = entries;
+    
     vga_print("Table:\n");
     debug_memdump(&entries[0], sizeof(entries));
 
     vga_print("Descriptor:\n");
     debug_memdump(&descriptor, sizeof(descriptor));
 
-    asm("cli\nhlt");
+   //asm("cli\nhlt");
 
     gdt_load(&descriptor);
 }

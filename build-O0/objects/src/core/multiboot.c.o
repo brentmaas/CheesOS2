@@ -1,0 +1,12 @@
+	.file	"multiboot.c"
+	.text
+	.globl	header
+	.section	multiboot,"a"
+	.align 4
+	.type	header, @object
+	.size	header, 12
+header:
+	.long	464367618
+	.long	3
+	.long	-464367621
+	.ident	"GCC: (GNU) 9.2.0"

@@ -17,14 +17,14 @@ ASM := nasm
 ASMFLAGS += -felf32
 
 LDFLAGS += -T$(LINKER)/kernel.ld -ffreestanding -nostdlib
-COMMON_FLAGS += -I$(INCLUDE) -I$(INCLUDE)/libc -ffreestanding -nostdlib
-CFLAGS += $(COMMON_FLAGS) -std=gnu11 -masm=intel
+COMMON_FLAGS +=  -I$(INCLUDE) -I$(INCLUDE)/libc -ffreestanding -nostdlib
+CFLAGS += $(COMMON_FLAGS) -std=gnu11
 
 QEMU ?= qemu-system-x86_64
-QEMU_COMMON_FLAGS += -no-reboot -gdb tcp::1234 -cpu 486 -kernel $(TARGET)
-QEMU_DEBUG_FLAGS += $(QEMU_COMMON_FLAGS) -S
+QEMU_COMMON_FLAGS += -no-reboot  -cpu 486 -kernel $(TARGET)
+QEMU_DEBUG_FLAGS += $(QEMU_COMMON_FLAGS) -gdb tcp::1234 -S
 
-find = $(shell find $1 -type f -name $2 -print)
+find = $(shell find $1 -type f -name $2 -print 2> /dev/null)
 
 CSRCS = $(call find, $(SRC)/, "*.c")
 ASMSRCS = $(filter-out src/libc/ctri.asm src/libc/ctrn.asm,$(call find, $(SRC)/, "*.asm"))

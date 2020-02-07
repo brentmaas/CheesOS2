@@ -8,6 +8,7 @@
 
 void kernel_main(multiboot_info* multiboot) {
     vga_init();
+    vga_print("Test1");
 
     gdt_init();
     // idt_init();

@@ -1,0 +1,33 @@
+	.file	"string.c"
+	.text
+	.globl	strlen
+	.type	strlen, @function
+strlen:
+.LFB0:
+	.cfi_startproc
+	pushl	%ebp
+	.cfi_def_cfa_offset 8
+	.cfi_offset 5, -8
+	movl	%esp, %ebp
+	.cfi_def_cfa_register 5
+	subl	$16, %esp
+	movl	$0, -4(%ebp)
+	jmp	.L2
+.L3:
+	incl	-4(%ebp)
+.L2:
+	movl	8(%ebp), %eax
+	leal	1(%eax), %edx
+	movl	%edx, 8(%ebp)
+	movb	(%eax), %al
+	testb	%al, %al
+	jne	.L3
+	movl	-4(%ebp), %eax
+	leave
+	.cfi_restore 5
+	.cfi_def_cfa 4, 4
+	ret
+	.cfi_endproc
+.LFE0:
+	.size	strlen, .-strlen
+	.ident	"GCC: (GNU) 9.2.0"
