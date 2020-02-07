@@ -1,15 +1,18 @@
 #include "memory/gdt.h"
 
+#include "vga/vga.h"
+#include "debug/memdump.h"
+
 extern void gdt_load(void*);
 
-static gdt_descriptor descriptor;
-static gdt_entry entries[5];
+static gdt_descriptor __attribute__((section("data"))) descriptor;
+static gdt_entry __attribute__((section("data"))) entries[5];
 
 void gdt_load_entry(gdt_entry* entry, uint32_t base, uint32_t limit, gdt_flags_type flags, gdt_access_type access) {
     entry->base_low = base & 0xFFFFu;
     entry->base_mid = (base & 0xFF0000u) >> 16u;
     entry->base_high = (base & 0xFF000000u) >> 24u;
-    
+
     entry->limit_low = limit & 0xFFFFu;
     entry->limit_high = (limit & 0xF0000u) >> 16u;
 
@@ -55,6 +58,13 @@ void gdt_init(void) {
 
     descriptor.size = sizeof(entries);
     descriptor.addr = entries;
+    vga_print("Table:\n");
+    debug_memdump(&entries[0], sizeof(entries));
+
+    vga_print("Descriptor:\n");
+    debug_memdump(&descriptor, sizeof(descriptor));
+
+    asm("cli\nhlt");
 
     gdt_load(&descriptor);
 }
