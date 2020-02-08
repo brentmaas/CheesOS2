@@ -12,12 +12,30 @@ void print_hex_char(uint8_t chr) {
     if (chr < 10) {
         vga_putchar(chr + '0');
     } else {
-        vga_putchar(chr + 'A');
+        vga_putchar(chr + 'A' - 10);
     }
 }
 
-void print_hex(uint16_t value) {
+void print_hex8(uint8_t value) {
     vga_print("0x");
+    print_hex_char((value >> 4) & 0xF);
+    print_hex_char(value & 0xF);
+}
+
+void print_hex16(uint16_t value) {
+    vga_print("0x");
+    print_hex_char((value >> 12) & 0xF);
+    print_hex_char((value >> 8) & 0xF);
+    print_hex_char((value >> 4) & 0xF);
+    print_hex_char(value & 0xF);
+}
+
+void print_hex32(uint32_t value) {
+    vga_print("0x");
+    print_hex_char((value >> 28) & 0xF);
+    print_hex_char((value >> 24) & 0xF);
+    print_hex_char((value >> 20) & 0xF);
+    print_hex_char((value >> 16) & 0xF);
     print_hex_char((value >> 12) & 0xF);
     print_hex_char((value >> 8) & 0xF);
     print_hex_char((value >> 4) & 0xF);
@@ -26,10 +44,26 @@ void print_hex(uint16_t value) {
 
 void report_pci(struct pci_device device, uint16_t vendor_id) {
     const uint16_t device_id = pci_config_read16(device, PCI_OFFSET_DEVICE_ID);
+    const uint8_t class = pci_config_read8(device, PCI_OFFSET_CLASS);
+    const uint8_t subclass = pci_config_read8(device, PCI_OFFSET_SUBCLASS);
+    const uint8_t prog_if = pci_config_read8(device, PCI_OFFSET_PROG_IF);
 
-    print_hex(device_id);
+    vga_putchar(device.bus + '0');
+    vga_putchar(':');
+    vga_putchar(device.slot + '0');
+    vga_putchar('.');
+    vga_putchar(device.function + '0');
     vga_putchar(' ');
-    print_hex(vendor_id);
+
+    print_hex16(vendor_id);
+    vga_putchar(' ');
+    print_hex16(device_id);
+    vga_print("  ");
+    print_hex8(class);
+    vga_print("     ");
+    print_hex8(subclass);
+    vga_print("    ");
+    print_hex8(prog_if);
     vga_putchar('\n');
 }
 
@@ -57,7 +91,7 @@ void kernel_main(multiboot_info* multiboot) {
 
     vga_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
     vga_print("pci devices:\n");
-    vga_print("vendor device\n");
+    vga_print("b:s.f vendor device class subclass prog-if\n");
     pci_scan(&report_pci);
 
     printf("%i", printf("test %i auwies, %i%% autistisch, de %s stiene dr weer schuune bie of zo, het antwoord is %c, ik ben %x, ook wel %X, vanbinnen\n", 20, 100, "bieten", 'B', 57005, 57005));
