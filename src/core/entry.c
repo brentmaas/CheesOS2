@@ -6,6 +6,7 @@
 #include "interrupt/idt.h"
 #include "core/multiboot.h"
 #include "pci/pci.h"
+#include "libc/stdio.h"
 
 void print_hex_char(uint8_t chr) {
     if (chr < 10) {
@@ -58,6 +59,6 @@ void kernel_main(multiboot_info* multiboot) {
     vga_print("pci devices:\n");
     vga_print("vendor device\n");
     pci_scan(&report_pci);
-    
+
     printf("%i", printf("test %i auwies, %i%% autistisch, de %s stiene dr weer schuune bie of zo, het antwoord is %c, ik ben %x, ook wel %X, vanbinnen\n", 20, 100, "bieten", 'B', 57005, 57005));
 }
