@@ -15,19 +15,17 @@ static uint16_t vga_make_char(char c, uint8_t color) {
 }
 
 static void vga_write_char(char c, uint8_t color) {
-    if(c == '\n') {
+    if(c == '\n' || vga_column >= VGA_WIDTH) {
         vga_column = 0;
         ++vga_row;
-
+        
         if(vga_row == VGA_HEIGHT) {
             vga_scroll(1);
         }
     }
-    else {
-        if(vga_column < VGA_WIDTH) {
-            vga_buffer[vga_row * VGA_WIDTH + vga_column] = vga_make_char(c, color);
-            ++vga_column;
-        }
+    if(c != '\n') {
+        vga_buffer[vga_row * VGA_WIDTH + vga_column] = vga_make_char(c, color);
+        ++vga_column;
     }
 
 }

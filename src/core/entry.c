@@ -5,6 +5,7 @@
 #include "memory/gdt.h"
 #include "interrupt/idt.h"
 #include "core/multiboot.h"
+#include "libc/stdio.h"
 
 void kernel_main(multiboot_info* multiboot) {
     vga_init();
@@ -27,4 +28,5 @@ void kernel_main(multiboot_info* multiboot) {
     vga_print("IS\n");
     vga_color(VGA_COLOR_BLUE, VGA_COLOR_WHITE);
     vga_print("GOED\n");
+    printf("%i", printf("test %i auwies, %i%% autistisch, de %s stiene dr weer schuune bie of zo, het antwoord is %c, ik ben %x, ook wel %X, vanbinnen\n", 20, 100, "bieten", 'B', 57005, 57005));
 }
