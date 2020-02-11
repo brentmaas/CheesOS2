@@ -71,7 +71,7 @@ void report_pci(struct pci_device device, uint16_t vendor_id) {
 void kernel_main(multiboot_info* multiboot) {
     vga_init();
     gdt_init();
-    // idt_init();
+    idt_init();
 
     if(multiboot->flags & MULTIBOOT_FLAG_BOOT_LOADER_NAME) {
         vga_print("Booted from ");

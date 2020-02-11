@@ -50,7 +50,7 @@ size_t printf(const char* format, ...){
             if(*format == '%'){
                 vga_putchar('%');
                 ++printed;
-            }else if(*format == 'i'){
+            }else if(*format == 'i' || *format == 'd'){
                 int i = va_arg(args, int);
                 char f[24] = {'\0'};
                 if(i < 0){

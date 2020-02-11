@@ -1,3 +1,5 @@
+[BITS 32]
+
 SECTION .init
     pop ebp
     ret

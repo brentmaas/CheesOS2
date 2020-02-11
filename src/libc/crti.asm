@@ -1,3 +1,5 @@
+[BITS 32]
+
 GLOBAL _init
 GLOBAL _fini
 

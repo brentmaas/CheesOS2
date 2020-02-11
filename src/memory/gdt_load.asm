@@ -1,3 +1,5 @@
+[BITS 32]
+
 GLOBAL gdt_load
 SECTION .text
 
