@@ -94,5 +94,5 @@ void kernel_main(multiboot_info* multiboot) {
     vga_print("b:s.f vendor device class subclass prog-if\n");
     pci_scan(&report_pci);
 
-    printf("%i", printf("test %i auwies, %i%% autistisch, de %s stiene dr weer schuune bie of zo, het antwoord is %c, ik ben %x, ook wel %X, vanbinnen. Ik heb %i kilo\'s appels.\n", 20, 100, "bieten", 'B', 57005, 57005, -285));
+    printf("%i", printf("test %u auwies, %i%% autistisch, de %s stiene dr weer schuune bie of zo, het antwoord is %c, ik ben %x, ook wel %X, vanbinnen. Ik heb %i kilo\'s appels.\n", 20, 100, "bieten", 'B', 57005, 57005, -285));
 }

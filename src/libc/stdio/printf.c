@@ -61,16 +61,22 @@ size_t printf(const char* format, ...){
                 }
                 vga_print(f);
                 printed += strlen(f);
+            }else if(*format == 'u'){
+                unsigned int i = va_arg(args, unsigned int);
+                char f[24] = {'\0'};
+                format_uint(f, i, 0);
+                vga_print(f);
+                printed += strlen(f);
             }else if(*format == 's'){
                 char* s = va_arg(args, char*);
                 vga_print(s);
                 printed += strlen(s);
             }else if(*format == 'c'){
-                size_t c = va_arg(args, size_t);
-                vga_putchar(c);
+                int c = va_arg(args, int);
+                vga_putchar((char) c);
                 ++printed;
             }else if(*format == 'x' || *format == 'X'){
-                size_t i = va_arg(args, size_t);
+                unsigned int i = va_arg(args, unsigned int);
                 char f[16] = {'\0'};
                 format_hex(f, i, *format == 'X');
                 vga_print(f);
