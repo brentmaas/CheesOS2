@@ -7,6 +7,7 @@
 #include "core/multiboot.h"
 #include "pci/pci.h"
 #include "libc/stdio.h"
+#include "core/io.h"
 
 void print_hex_char(uint8_t chr) {
     if (chr < 10) {
@@ -94,5 +95,7 @@ void kernel_main(multiboot_info* multiboot) {
     vga_print("b:s.f vendor device class subclass prog-if\n");
     pci_scan(&report_pci);
 
-    printf("%i", printf("test %u auwies, %i%% autistisch, de %s stiene dr weer schuune bie of zo, het antwoord is %c, ik ben %x, ook wel %X, vanbinnen. Ik heb %i kilo\'s appels.\n", 20, 100, "bieten", 'B', 57005, 57005, -285));
+    printf("%i\n", printf("test %u auwies, %z%% autistisch, de %s stiene dr weer schuune bie of zo, het antwoord is %c, ik ben %x, ook wel %X, vanbinnen. Ik heb %i kilo\'s appels.\n", 20, 100, "bieten", 'B', 57005, 57005, -285));
+    
+    printf("Shit werkte t/m hier");
 }
