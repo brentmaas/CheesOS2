@@ -91,11 +91,22 @@ void kernel_main(multiboot_info* multiboot) {
     vga_print("GOED\n");
 
     vga_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
-    vga_print("pci devices:\n");
-    vga_print("b:s.f vendor device class subclass prog-if\n");
-    pci_scan(&report_pci);
+
+    vga_print("Probing for PCI mechanism #1... ");
+    bool has_mech1 = pci_probe_mech1();
+    vga_print(has_mech1 ? "Yes\n" : "No\n");
+
+    vga_print("Probing for PCI mechanism #2... ");
+    bool has_mech2 = pci_probe_mech2();
+    vga_print(has_mech2 ? "Yes\n" : "No\n");
+
+    if (has_mech1) {
+        vga_print("pci devices:\n");
+        vga_print("b:s.f vendor device class subclass prog-if\n");
+        pci_scan(&report_pci);
+    }
 
     printf("%i\n", printf("test %u auwies, %z%% autistisch, de %s stiene dr weer schuune bie of zo, het antwoord is %c, ik ben %x, ook wel %X, vanbinnen. Ik heb %i kilo\'s appels.\n", 20, 100, "bieten", 'B', 57005, 57005, -285));
-    
+
     printf("Shit werkte t/m hier");
 }

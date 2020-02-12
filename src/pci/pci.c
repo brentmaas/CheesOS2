@@ -54,6 +54,30 @@ static void pci_scan_slot(pci_scan_cbk callback, uint8_t bus, uint8_t slot) {
     }
 }
 
+bool pci_probe_mech1() {
+    uint32_t orig_val = io_in32(PCI_PORT_CONFIG_ADDRESS);
+    io_out32(PCI_PORT_CONFIG_ADDRESS, 0x80000000);
+    bool has_mech1 = io_in32(PCI_PORT_CONFIG_ADDRESS) == 0x80000000;
+    io_out32(PCI_PORT_CONFIG_ADDRESS, orig_val);
+    return has_mech1;
+}
+
+bool pci_probe_mech2() {
+    uint8_t orig_val = io_in8(PCI_PORT_CONFIG_ADDRESS);
+    io_out8(PCI_PORT_CONFIG_ADDRESS, 0);
+    bool has_mech2_lower = io_in8(PCI_PORT_CONFIG_ADDRESS) == 0;
+    io_out8(PCI_PORT_CONFIG_ADDRESS, orig_val);
+
+    if (!has_mech2_lower) {
+        return false;
+    }
+
+    orig_val = io_in8(PCI_PORT_CONFIG_ADDRESS + 4);
+    bool has_mech2 = io_in8(PCI_PORT_CONFIG_ADDRESS + 4) == 0;
+    io_out8(PCI_PORT_CONFIG_ADDRESS + 4, orig_val);
+    return has_mech2;
+}
+
 void pci_scan(pci_scan_cbk callback) {
     uint8_t bus = 255;
     do {

@@ -2,6 +2,7 @@
 #define _CHEESOS2_PCI_PCI_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define PCI_PORT_CONFIG_ADDRESS 0xCF8
 #define PCI_PORT_CONFIG_DATA 0xCFC
@@ -55,6 +56,9 @@ uint16_t pci_config_read16(struct pci_device device, enum pci_offset offset);
 uint32_t pci_config_read32(struct pci_device device, enum pci_offset offset);
 
 typedef void (*pci_scan_cbk)(struct pci_device device, uint16_t vendor_id);
+
+bool pci_probe_mech1();
+bool pci_probe_mech2();
 
 void pci_scan(pci_scan_cbk callback);
 
