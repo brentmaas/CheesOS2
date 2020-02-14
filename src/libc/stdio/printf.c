@@ -1,20 +1,25 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <string.h>
+#include <math.h>
+
 #include "vga/vga.h"
-#include "libc/string.h"
 
 static void format_uint(char* buffer, uintmax_t i, size_t offset){
     size_t j = offset;
     char tmp[24];
     size_t k = 0;
     while(i > 0){
-        tmp[k] = '0' + (i % 10);
-        i /= 10;
+        uint64_t rem;
+        i = udivmod64(i, 10, &rem);
+
+        tmp[k] = '0' + (char) rem;
         ++k;
     }
+
     for(size_t l = 0;l < k;++l){
-        buffer[j+k-l-1] = tmp[l];
+        buffer[j + k - l - 1] = tmp[l];
     }
 }
 

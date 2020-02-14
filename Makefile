@@ -10,7 +10,7 @@ CC := i486-elf-gcc
 ASM := nasm
 ASMFLAGS += -felf32
 
-LDFLAGS += -T$(LINKER)/kernel.ld -ffreestanding -nostdlib -flto -lgcc
+LDFLAGS += -T$(LINKER)/kernel.ld -ffreestanding -nostdlib -flto
 COMMON_FLAGS += -g -I$(INCLUDE) -I$(INCLUDE)/libc -ffreestanding -nostdlib
 CFLAGS += $(COMMON_FLAGS) -std=gnu11
 

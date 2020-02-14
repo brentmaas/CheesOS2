@@ -1,12 +1,12 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <stdio.h>
 
 #include "vga/vga.h"
 #include "memory/gdt.h"
 #include "interrupt/idt.h"
 #include "core/multiboot.h"
 #include "pci/pci.h"
-#include "libc/stdio.h"
 #include "core/io.h"
 
 void print_hex_char(uint8_t chr) {
