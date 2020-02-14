@@ -18,7 +18,7 @@ static void vga_write_char(char c, uint8_t color) {
     if(c == '\n' || vga_column >= VGA_WIDTH) {
         vga_column = 0;
         ++vga_row;
-        
+
         if(vga_row == VGA_HEIGHT) {
             vga_scroll(1);
         }
@@ -50,7 +50,7 @@ void vga_putchar(char c) {
 }
 
 void vga_write(const char* str, size_t size) {
-    for(size_t i= 0; i < size; ++i) {
+    for(size_t i = 0; i < size; ++i) {
         vga_putchar(str[i]);
     }
 }

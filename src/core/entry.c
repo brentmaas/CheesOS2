@@ -107,6 +107,7 @@ void kernel_main(multiboot_info* multiboot) {
     }
 
     printf("%i\n", printf("test %u auwies, %z%% autistisch, de %s stiene dr weer schuune bie of zo, het antwoord is %c, ik ben %x, ook wel %X, vanbinnen. Ik heb %i kilo\'s appels.\n", 20, 100, "bieten", 'B', 57005, 57005, -285));
+    printf("%j\n", 123456789012);
 
     printf("Shit werkte t/m hier");
 }
