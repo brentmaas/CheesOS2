@@ -156,7 +156,7 @@ uintmax_t read_uint_arg(va_list* args, enum format_length type) {
         case LENGTH_SIZE:
             return va_arg(*args, size_t);
         case LENGTH_UMAX:
-            return va_arg(*args, intmax_t);
+            return va_arg(*args, uintmax_t);
     }
 }
 
