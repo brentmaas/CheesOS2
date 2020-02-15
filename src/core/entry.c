@@ -106,8 +106,24 @@ void kernel_main(multiboot_info* multiboot) {
         pci_scan(&report_pci);
     }
 
-    printf("%i\n", printf("test %u auwies, %z%% autistisch, de %s stiene dr weer schuune bie of zo, het antwoord is %c, ik ben %x, ook wel %X, vanbinnen. Ik heb %i kilo\'s appels.\n", 20, 100, "bieten", 'B', 57005, 57005, -285));
-    printf("%j\n", 123456789012);
+    size_t printed = printf(
+        "test %u auwies, %llu%% autistisch, de %s "
+        "stiene dr weer schuune bie of zo, het "
+        "antwoord is %c, ik ben %x, ook wel %X, vanbinnen. "
+        "Ik heb %i kilo\'s appels.\n",
+        20,
+        100ULL,
+        "bieten",
+        'B',
+        0xDEAD, 0xDEAD,
+        -285
+    );
+
+    printf("%i\n", printed);
+    printf("%jd\n", (intmax_t) -123456789012LL);
+    printf("%10s\n", "oef");
+    printf("%05i\n", 123);
+    printf("0x%016X\n", 0xDEAD00F);
 
     printf("Shit werkte t/m hier");
 }
