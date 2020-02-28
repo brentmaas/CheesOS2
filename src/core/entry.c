@@ -8,6 +8,7 @@
 #include "core/multiboot.h"
 #include "pci/pci.h"
 #include "core/io.h"
+#include "interrupt/pic.h"
 
 void report_pci(struct pci_device device, uint16_t vendor_id) {
     const uint16_t device_id = pci_config_read16(device, PCI_OFFSET_DEVICE_ID);
@@ -32,6 +33,9 @@ void kernel_main(multiboot_info* multiboot) {
     vga_init();
     gdt_init();
     idt_init();
+    pic_remap(0x20, 0x28);
+    pic_set_mask(0xFFFF); //Disable PIC
+    idt_enable();
 
     if(multiboot->flags & MULTIBOOT_FLAG_BOOT_LOADER_NAME) {
         vga_print("Booted from ");

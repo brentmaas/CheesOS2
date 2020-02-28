@@ -2,6 +2,7 @@
 #define _CHEESOS2_INCLUDE_INTERRUPT_IDT_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 #include "interrupt/registers.h"
 
@@ -44,5 +45,10 @@ typedef void(*interrupt_status)(interrupt_registers*, interrupt_parameters*, uin
 void idt_init(void);
 void idt_enable(void);
 void idt_disable(void);
+
+
+void idt_make_interrupt(size_t interrupt, void* callback, idt_gate_type callback_type, idt_flag_type flags);
+void idt_make_interrupt_no_status(size_t interrupt, interrupt_no_status callback, idt_gate_type callback_type, idt_flag_type flags);
+void idt_make_interrupt_status(size_t interrupt, interrupt_status callback, idt_gate_type callback_type, idt_flag_type flags);
 
 #endif
