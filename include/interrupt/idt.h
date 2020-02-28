@@ -41,8 +41,8 @@ typedef enum {
 typedef void(*interrupt_no_status)(interrupt_registers*, interrupt_parameters*);
 typedef void(*interrupt_status)(interrupt_registers*, interrupt_parameters*, uint32_t);
 
-
-
 void idt_init(void);
+void idt_enable(void);
+void idt_disable(void);
 
 #endif

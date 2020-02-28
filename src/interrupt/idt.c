@@ -10,6 +10,7 @@ void* idt_callback_routines[256];
 void* idt_hardware_callbacks[256];
 
 extern void idt_create_handler_table(void* table);
+extern void idt_load(void* descriptor);
 
 void idt_set_entry(idt_entry* entry, uint32_t offset, uint16_t selector, idt_gate_type gate_type, idt_flag_type flags) {
     entry->offset_low = offset & 0xFFFFu;
@@ -56,8 +57,8 @@ void idt_init(void) {
     idt_create_handler_table(idt_hardware_callbacks);
 
     idt_make_interrupt_no_status(0, no_status_callback, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT);
-    //TODO: Debug
-    //TODO: Non-maskable interrupt
+    idt_make_interrupt(1, NULL, 0, 0); //TODO: Debug
+    idt_make_interrupt(2, NULL, 0, 0); //TODO: Non-maskable interrupt
     idt_make_interrupt_no_status(3, no_status_callback, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_3 | IDT_FLAG_PRESENT);
     idt_make_interrupt_no_status(4, no_status_callback, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT);
     idt_make_interrupt_no_status(5, no_status_callback, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT);
@@ -70,13 +71,29 @@ void idt_init(void) {
     idt_make_interrupt_status(12, status_callback, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT);
     idt_make_interrupt_status(13, status_callback, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT);
     idt_make_interrupt_status(14, status_callback, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT);
-    //Reserved
+    idt_make_interrupt(15, NULL, 0, 0);
     idt_make_interrupt_no_status(16, no_status_callback, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT);
     idt_make_interrupt_status(17, status_callback, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT);
-    idt_make_interrupt_no_status(18, no_status_callback, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT);
-    //Reserved 19-20
+    idt_make_interrupt(18, no_status_callback, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT);
+    idt_make_interrupt(19, NULL, 0, 0);
+    idt_make_interrupt(20, NULL, 0, 0);
     idt_make_interrupt_no_status(21, no_status_callback, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT);
-    //Reserved 22-31
+    for(int i = 22; i < 32; ++i) {
+        idt_make_interrupt(i, NULL, 0, 0);
+    }
 
-    idt_make_interrupt_no_status(0x42, userspace_callback, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_3 | IDT_FLAG_PRESENT);
+    for(int i = 32; i < 66; ++i) {
+        idt_make_interrupt(i, NULL, 0, 0);
+    }
+
+    idt_make_interrupt_no_status(66, userspace_callback, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_3 | IDT_FLAG_PRESENT);
+
+    for(int i = 67; i < 256; ++i) {
+        idt_make_interrupt(i, NULL, 0, 0);
+    }
+
+    descriptor.size = sizeof(entries) - 1;
+    descriptor.addr = entries;
+
+    idt_load(&descriptor);
 }

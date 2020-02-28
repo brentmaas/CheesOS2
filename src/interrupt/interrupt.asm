@@ -1,9 +1,25 @@
 [BITS 32]
 
 EXTERN idt_callback_routines
+GLOBAL idt_load
+GLOBAL idt_enable
+GLOBAL idt_disable
 GLOBAL idt_create_handler_table
 
 SECTION .text
+
+idt_load:
+    mov eax, [esp+4]
+    lidt [eax]
+    ret
+
+idt_enable:
+    sti
+    ret
+
+idt_disable:
+    cli
+    ret
 
 %macro interrupt_no_status 1
 interrupt_handler_%1:
