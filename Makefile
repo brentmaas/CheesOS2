@@ -15,7 +15,7 @@ COMMON_FLAGS += -g -I$(INCLUDE) -I$(INCLUDE)/libc -ffreestanding -nostdlib
 CFLAGS += $(COMMON_FLAGS) -std=gnu11
 
 QEMU ?= qemu-system-x86_64
-QEMU_COMMON_FLAGS += -no-reboot  -cpu 486 -kernel $(TARGET)
+QEMU_COMMON_FLAGS += -no-reboot -cpu 486 -kernel $(TARGET)
 QEMU_DEBUG_FLAGS += $(QEMU_COMMON_FLAGS) -gdb tcp::1234 -S
 
 find = $(shell find $1 -type f -name $2 -print 2> /dev/null)
