@@ -56,10 +56,10 @@ typedef struct __attribute__((packed)) {
 } vga_grc_graphics_mode;
 
 typedef enum {
-    VGA_MEMORY_MAP_A0000_BFFFF = 0x00,
-    VGA_MEMORY_MAP_A0000_AFFFF = 0x01,
-    VGA_MEMORY_MAP_B0000_B7FFF = 0x02,
-    VGA_MEMORY_MAP_B8000_BFFFF = 0x03
+    VGA_MEMORY_MAP_A0000_128K = 0x00,
+    VGA_MEMORY_MAP_A0000_64K = 0x01,
+    VGA_MEMORY_MAP_B0000_32K = 0x02,
+    VGA_MEMORY_MAP_B8000_32K = 0x03
 } vga_memory_map;
 
 typedef struct __attribute__((packed)) {
@@ -127,7 +127,7 @@ typedef enum {
 
 typedef struct __attribute__((packed)) {
     uint8_t attribute_address : 5;
-    uint8_t disable_internal_palette : 1;
+    uint8_t lock_palette : 1;
 } vga_atc_address;
 
 typedef struct __attribute__((packed)) {
@@ -175,7 +175,7 @@ typedef enum {
     VGA_IND_CRTC_CURSOR_LOCATION_LOW = 0x0F,
     VGA_IND_CRTC_VERT_RETRACE_START = 0x10,
     VGA_IND_CRTC_VERT_RETRACE_END = 0x11,
-    VGA_IND_CRTC_VERT_DISPLAY_END = 0x12
+    VGA_IND_CRTC_VERT_DISPLAY_END = 0x12,
     VGA_IND_CRTC_OFFSET = 0x13,
     VGA_IND_CRTC_UNDERLINE_LOCATION = 0x14,
     VGA_IND_CRTC_VERT_BLANKING_START = 0x15,
@@ -214,7 +214,7 @@ typedef struct __attribute__((packed)) {
 
 typedef struct __attribute__((packed)) {
     uint8_t maximum_scan_line : 5;
-    uint8_t vertical_blanking_start_9 : 1;
+    uint8_t vert_blanking_start_9 : 1;
     uint8_t line_compare_9 : 1;
     uint8_t enable_double_scan : 1;
 } vga_crtc_maximum_scan_line;
@@ -234,7 +234,7 @@ typedef struct __attribute__((packed)) {
     uint8_t _unused : 2;
     uint8_t bandwidth : 1;
     uint8_t protect : 1;
-} vga_crtc_vertical_retrace_end;
+} vga_crtc_vert_retrace_end;
 
 typedef struct __attribute__((packed)) {
     uint8_t underline_location : 5;
@@ -243,8 +243,8 @@ typedef struct __attribute__((packed)) {
 } vga_crtc_underline_location;
 
 typedef struct __attribute__((packed)) {
-    uint8_t vertical_blanking_end : 7;
-} vga_crtc_vertical_blanking_end;
+    uint8_t vert_blanking_end : 7;
+} vga_crtc_vert_blanking_end;
 
 typedef enum {
     VGA_ADDRESS_MODE_WORDS = 0x00,
@@ -263,18 +263,18 @@ typedef struct __attribute__((packed)) {
 
 // Miscellaneous registers
 typedef enum {
-    VGA_IO_EMULATION_MODE_MONOCHROME = 0x00,
-    VGA_IO_EMULATION_MODE_COLOR = 0x01
-} vga_io_emulation_mode;
+    VGA_EMULATION_MODE_MONOCHROME = 0x00,
+    VGA_EMULATION_MODE_COLOR = 0x01
+} vga_emulation_mode;
 
 typedef enum {
     VGA_CLOCK_SPEED_25MHZ = 0x00,
     VGA_CLOCK_SPEED_28MHZ = 0x01,
-    // 0x02 and 0x03 are reserved
+    // 0x02 and 0x03 are implementation-defined
 } vga_clock_speed;
 
 typedef struct __attribute__((packed)) {
-    vga_io_emulation_mode io_emulation_mode : 1;
+    vga_emulation_mode io_emulation_mode : 1;
     uint8_t enable_vram_access : 1;
     vga_clock_speed clock_select : 2;
     uint8_t odd_even_select_high_page : 1;

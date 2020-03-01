@@ -3,21 +3,35 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "driver/vga/registers.h"
 
 struct vga_crt_timings {
-    // Values in pixels/scanlines, regardless of 8 or 9 pixels per character
+    // Values in pixels/scanlines, regardless of 8 or 9 dots per character
+    // These fields are in chronological order
 
     uint16_t active_area;
-    uint8_t overscan_front;
-    uint8_t blanking_front;
-    uint8_t retrace;
+    uint8_t overscan_back; // right or bottom
     uint8_t blanking_back;
-    uint8_t overscan_back;
+    uint8_t retrace;
+    uint8_t blanking_front; // left or top
+    uint8_t overscan_front;
 };
+
+typedef enum {
+    VGA_COLOR_DEPTH_2_COLOR,
+    VGA_COLOR_DEPTH_4_COLOR,
+    VGA_COLOR_DEPTH_16_COLOR,
+    VGA_COLOR_DEPTH_256_COLOR
+} vga_color_depth;
 
 typedef struct {
     struct vga_crt_timings horizontal_timings;
     struct vga_crt_timings vertical_timings;
+
+    vga_dot_mode dot_mode : 1;
+    vga_clock_speed clock_speed : 2;
+    bool enable_graphics_mode : 1;
+    vga_color_depth color_depth : 2;
 } vga_videomode;
 
 extern const vga_videomode VGA_VIDEOMODE_640x480x16;
