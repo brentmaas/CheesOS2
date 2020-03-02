@@ -126,7 +126,7 @@ static bool parse_format_options(const char* format, struct format_options* opts
     return true;
 }
 
-intmax_t read_int_arg(va_list* args, enum format_length type) {
+static intmax_t read_int_arg(va_list* args, enum format_length type) {
     switch (type) {
         case LENGTH_CHAR:
         case LENGTH_SHORT:
@@ -143,7 +143,7 @@ intmax_t read_int_arg(va_list* args, enum format_length type) {
     }
 }
 
-uintmax_t read_uint_arg(va_list* args, enum format_length type) {
+static uintmax_t read_uint_arg(va_list* args, enum format_length type) {
     switch (type) {
         case LENGTH_CHAR:
         case LENGTH_SHORT:
