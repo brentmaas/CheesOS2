@@ -24,13 +24,25 @@ typedef enum {
     VGA_COLOR_DEPTH_256_COLOR
 } vga_color_depth;
 
+// Return the amount of bits required to store a value for a particular color depth
+#define VGA_COLOR_DEPTH_REQUIRED_BITS(color_depth) (1 << (color_depth))
+
+typedef enum {
+    VGA_ADDRESS_MODE_BYTES,
+    VGA_ADDRESS_MODE_WORDS,
+    VGA_ADDRESS_MODE_DWORDS
+} vga_address_mode;
+
+// Return size in bytes of element corresponding to an address mode
+#define VGA_ADDRESS_MODE_SIZE(address_mode) (1 << (address_mode))
+
 typedef struct {
     struct vga_crt_timings horizontal_timings;
     struct vga_crt_timings vertical_timings;
 
     vga_dot_mode dot_mode : 1;
     vga_clock_speed clock_speed : 2;
-    bool enable_graphics_mode : 1;
+    bool enable_graphics : 1;
     vga_color_depth color_depth : 2;
 } vga_videomode;
 

@@ -8,11 +8,12 @@ typedef enum {
     VGA_IND_GRC_COLOR_COMPARE = 0x02,
     VGA_IND_GRC_DATA_ROTATE = 0x03,
     VGA_IND_GRC_READ_MAP = 0x04,
-    VGA_IND_GRC_GRAPHICS_MODE = 0x05,
+    VGA_IND_GRC_MODE = 0x05,
     VGA_IND_GRC_MISC = 0x06,
     VGA_IND_GRC_COLOR_DONT_CARE = 0x07,
     VGA_IND_GRC_BIT_MASK = 0x08
 } vga_grc_index;
+#define VGA_NUM_GRC_INDICES (0x09)
 
 typedef enum {
     VGA_PLANE_0_BIT = 1 << 0,
@@ -30,29 +31,35 @@ typedef enum {
 
 typedef struct __attribute__((packed)) {
     vga_plane_bits planes : 4;
+    uint8_t : 4;
 } vga_grc_set_reset;
 
 typedef struct __attribute__((packed)) {
     vga_plane_bits planes : 4;
+    uint8_t : 4;
 } vga_grc_enable_set_reset;
 
 typedef struct __attribute__((packed)) {
     vga_plane_bits planes : 4;
+    uint8_t : 4;
 } vga_grc_color_compare;
 
 typedef struct __attribute__((packed)) {
     uint8_t rotate_count : 3;
     vga_logical_op operation : 2;
+    uint8_t : 3;
 } vga_grc_data_rotate;
 
 typedef struct __attribute__((packed)) {
     uint8_t plane : 2;
+    uint8_t : 6;
 } vga_grc_read_map;
 
 typedef struct __attribute__((packed)) {
     uint8_t write_mode : 2;
-    uint8_t _unused : 1;
+    uint8_t : 1;
     uint8_t read_mode : 1;
+    uint8_t : 4;
 } vga_grc_graphics_mode;
 
 typedef enum {
@@ -66,6 +73,7 @@ typedef struct __attribute__((packed)) {
     uint8_t graphics_mode : 1;
     uint8_t chain_odd_even : 1;
     vga_memory_map memory_map : 2;
+    uint8_t : 4;
 } vga_grc_misc;
 
 // Sequencer registers
@@ -76,10 +84,12 @@ typedef enum {
     VGA_IND_SEQ_CHARACTER_MAP_SELECT = 0x03,
     VGA_IND_SEQ_MEMORY_MODE = 0x04
 } vga_seq_index;
+#define VGA_NUM_SEQ_INDICES (0x05)
 
 typedef struct __attribute__((packed)) {
     uint8_t synchronous_reset : 1;
     uint8_t asynchronous_reset : 1;
+    uint8_t : 6;
 } vga_seq_reset;
 
 typedef enum {
@@ -89,15 +99,17 @@ typedef enum {
 
 typedef struct __attribute__((packed)) {
     vga_dot_mode dot_mode : 1;
-    uint8_t _unused : 1;
+    uint8_t _ : 1;
     uint8_t shift_load_rate : 1;
     uint8_t enable_half_dot_clock : 1;
     uint8_t enable_shift_4 : 1;
     uint8_t disable_screen : 1;
+    uint8_t : 2;
 } vga_seq_clocking_mode;
 
 typedef struct __attribute__((packed)) {
     vga_plane_bits planes : 4;
+    uint8_t : 4;
 } vga_seq_map_mask;
 
 typedef struct __attribute__((packed)) {
@@ -105,13 +117,15 @@ typedef struct __attribute__((packed)) {
     uint8_t csal : 2;
     uint8_t csbh : 1;
     uint8_t csah : 1;
+    uint8_t : 2;
 } vga_seq_character_map_select;
 
 typedef struct __attribute__((packed)) {
-    uint8_t _unused : 1;
+    uint8_t : 1;
     uint8_t extended_memory : 1;
     uint8_t disable_odd_even : 1;
     uint8_t enable_chain_4 : 1;
+    uint8_t : 4;
 } vga_seq_memory_mode;
 
 // Attribute controller registers
@@ -124,10 +138,12 @@ typedef enum {
     VGA_IND_ATC_HORIZ_PIXEL_PANNING = 0x13,
     VGA_IND_ATC_COLOR_SELECT = 0x14,
 } vga_atc_index;
+#define VGA_NUM_ATC_INDICES (0x15)
 
 typedef struct __attribute__((packed)) {
     uint8_t attribute_address : 5;
     uint8_t lock_palette : 1;
+    uint8_t : 2;
 } vga_atc_address;
 
 typedef struct __attribute__((packed)) {
@@ -135,6 +151,7 @@ typedef struct __attribute__((packed)) {
     uint8_t enable_monochrome_emulation : 1;
     uint8_t enable_line_graphics : 1;
     uint8_t enable_blink : 1;
+    uint8_t : 1;
     uint8_t enable_bottom_pixel_pan : 1;
     uint8_t enable_256_color : 1;
     uint8_t p45s : 1;
@@ -144,15 +161,18 @@ typedef uint8_t vga_atc_overscan_color;
 
 typedef struct __attribute__((packed)) {
     vga_plane_bits planes : 4;
+    uint8_t : 4;
 } vga_atc_color_plane_enable;
 
 typedef struct __attribute__((packed)) {
     uint8_t pixel_shift : 4;
+    uint8_t : 4;
 } vga_atc_horiz_pixel_panning;
 
 typedef struct __attribute__((packed)) {
     uint8_t color_select_5_4 : 2;
     uint8_t color_select_7_6 : 2;
+    uint8_t : 4;
 } vga_atc_color_select;
 
 // CRT controller registers
@@ -183,6 +203,7 @@ typedef enum {
     VGA_IND_CRTC_MODE = 0x17,
     VGA_IND_CRTC_LINE_COMPARE = 0x18
 } vga_crtc_index;
+#define VGA_NUM_CRTC_INDICES (0x19)
 
 typedef struct __attribute__((packed)) {
     uint8_t horiz_blanking_end_low : 5;
@@ -210,6 +231,7 @@ typedef struct __attribute__((packed)) {
 typedef struct __attribute__((packed)) {
     uint8_t preset_row_scan : 5;
     uint8_t byte_panning : 2;
+    uint8_t : 1;
 } vga_crtc_preset_row_scan;
 
 typedef struct __attribute__((packed)) {
@@ -222,16 +244,18 @@ typedef struct __attribute__((packed)) {
 typedef struct __attribute__((packed)) {
     uint8_t cursor_scan_line_start : 5;
     uint8_t disable_cursor : 1;
+    uint8_t : 2;
 } vga_crtc_cursor_start;
 
 typedef struct __attribute__((packed)) {
     uint8_t cursor_scan_line_end : 5;
     uint8_t cursor_skew : 2;
+    uint8_t : 1;
 } vga_crtc_cursor_end;
 
 typedef struct __attribute__((packed)) {
     uint8_t vert_retrace_end : 4;
-    uint8_t _unused : 2;
+    uint8_t : 2;
     uint8_t bandwidth : 1;
     uint8_t protect : 1;
 } vga_crtc_vert_retrace_end;
@@ -239,25 +263,18 @@ typedef struct __attribute__((packed)) {
 typedef struct __attribute__((packed)) {
     uint8_t underline_location : 5;
     uint8_t enable_quarter_memory_clock : 1;
-    uint8_t enable_double_word_addressing : 1;
+    uint8_t enable_dword_addressing : 1;
+    uint8_t : 1;
 } vga_crtc_underline_location;
-
-typedef struct __attribute__((packed)) {
-    uint8_t vert_blanking_end : 7;
-} vga_crtc_vert_blanking_end;
-
-typedef enum {
-    VGA_ADDRESS_MODE_WORDS = 0x00,
-    VGA_ADDRESS_MODE_BYTES = 0x01
-} vga_address_mode;
 
 typedef struct __attribute__((packed)) {
     uint8_t map13 : 1;
     uint8_t map14 : 1;
     uint8_t enable_half_scanline_clock : 1;
     uint8_t enable_half_memory_clock : 1;
+    uint8_t : 1;
     uint8_t address_wrap_select : 1;
-    vga_address_mode address_mode : 1;
+    uint8_t disable_word_addressing : 1;
     uint8_t enable_sync : 1;
 } vga_crtc_mode;
 
@@ -277,6 +294,7 @@ typedef struct __attribute__((packed)) {
     vga_emulation_mode io_emulation_mode : 1;
     uint8_t enable_vram_access : 1;
     vga_clock_speed clock_select : 2;
+    uint8_t : 1;
     uint8_t odd_even_select_high_page : 1;
     uint8_t hsync_polarity : 1;
     uint8_t vsync_polarity : 1;
