@@ -213,7 +213,7 @@ static void set_crtc_registers(const vga_videomode* mode) {
 
         io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_MAXIMUM_SCAN_LINE);
         VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((vga_crtc_maximum_scan_line) {
-            .maximum_scan_line = 0x0F, // TODO: Allow for finer control
+            .maximum_scan_line = 0xF, // Temporary mode->enable_graphics ? 0 : VGA_TEXTMODE_CHARACTER_HEIGHT,
             .vert_blanking_start_9 = (v_blanking_start >> 9) & 0x1,
             .line_compare_9 = (line_compare >> 9) & 0x1,
             .enable_double_scan = 0
@@ -277,7 +277,13 @@ static void set_crtc_registers(const vga_videomode* mode) {
         .byte_panning = 0
     }));
 
-    // TODO: Move cursor code somewhere else?
+    io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_START_ADDRESS_HIGH);
+    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, (uint8_t) 0);
+    io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_START_ADDRESS_LOW);
+    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, (uint8_t) 0);
+}
+
+static void reset_cursor() {
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_CURSOR_START);
     VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((vga_crtc_cursor_start) {
         .cursor_scan_line_start = 0,
@@ -286,20 +292,64 @@ static void set_crtc_registers(const vga_videomode* mode) {
 
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_CURSOR_END);
     VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((vga_crtc_cursor_end) {
-        .cursor_scan_line_end = 0xF, // TODO: Set to value in maximum scan line
+        .cursor_scan_line_end = VGA_TEXTMODE_CHARACTER_HEIGHT - 1,
         .cursor_skew = 0
     }));
 
-    io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_START_ADDRESS_HIGH);
-    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, (uint8_t) 0);
-    io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_START_ADDRESS_LOW);
-    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, (uint8_t) 0);
-
-    // TODO: Also cursor code
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_CURSOR_LOCATION_HIGH);
     VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, (uint8_t) 0);
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_CURSOR_LOCATION_LOW);
     VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, (uint8_t) 0);
+}
+
+static void set_grc_registers(const vga_videomode* mode) {
+    io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_SET_RESET);
+    VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_set_reset) {
+        .planes = 0
+    }));
+
+    io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_ENABLE_SET_RESET);
+    VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_enable_set_reset) {
+        .planes = 0
+    }));
+
+    io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_COLOR_COMPARE);
+    VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_color_compare) {
+        .planes = 0
+    }));
+
+    io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_DATA_ROTATE);
+    VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_data_rotate) {
+        .rotate_count = 0,
+        .operation = VGA_OP_NOP
+    }));
+
+    io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_READ_MAP);
+    VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_read_map) {
+        .plane = 0
+    }));
+
+    io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_MODE);
+    VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_mode) {
+        .write_mode = 0,
+        .read_mode = 0,
+        .enable_host_odd_even = true,
+        .enable_shift_interleave = false,
+        .enable_shift256 = false
+    }));
+
+    io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_MISC);
+    VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_misc) {
+        .enable_graphics_mode = mode->enable_graphics,
+        .enable_chain_odd_even = false,
+        .memory_map = VGA_MEMORY_MAP_A0000_64K
+    }));
+
+    io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_COLOR_DONT_CARE);
+    VGA_WRITE(VGA_PORT_GRC_DATA, (uint8_t) 0);
+
+    io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_BIT_MASK);
+    VGA_WRITE(VGA_PORT_GRC_DATA, (uint8_t) 0xFF);
 }
 
 void vga_set_videomode(const vga_videomode* mode) {
@@ -310,17 +360,18 @@ void vga_set_videomode(const vga_videomode* mode) {
         .enable_vram_access = 1,
         .clock_select = mode->clock_speed,
         .odd_even_select_high_page = false,
-        .hsync_polarity = 1, // negative polarity
-        .vsync_polarity = 1,
+        .hsync_polarity = VGA_POLARITY_NEGATIVE,
+        .vsync_polarity = VGA_POLARITY_NEGATIVE,
     }));
 
     blank_and_unlock();
+    set_crtc_registers(mode);
+    reset_cursor();
     // TODO: Display memory access
     // TODO: Display sequencing
     // TODO: Cursor
     // TODO: Attributes
     // TODO: DAC
-    set_crtc_registers(mode);
     unblank_and_lock();
 
     dump_registers();

@@ -23,11 +23,11 @@ typedef enum {
 } vga_plane_bits;
 
 typedef enum {
-    VGA_LOGICAL_OP_NOP = 0x00,
-    VGA_LOGICAL_OP_AND = 0x01,
-    VGA_LOGICAL_OP_OR = 0x02,
-    VGA_LOGICAL_OP_XOR = 0x03
-} vga_logical_op;
+    VGA_OP_NOP = 0x00,
+    VGA_OP_AND = 0x01,
+    VGA_OP_OR = 0x02,
+    VGA_OP_XOR = 0x03
+} vga_operator;
 
 typedef struct __attribute__((packed)) {
     vga_plane_bits planes : 4;
@@ -46,7 +46,7 @@ typedef struct __attribute__((packed)) {
 
 typedef struct __attribute__((packed)) {
     uint8_t rotate_count : 3;
-    vga_logical_op operation : 2;
+    vga_operator operation : 2;
     uint8_t : 3;
 } vga_grc_data_rotate;
 
@@ -59,8 +59,11 @@ typedef struct __attribute__((packed)) {
     uint8_t write_mode : 2;
     uint8_t : 1;
     uint8_t read_mode : 1;
-    uint8_t : 4;
-} vga_grc_graphics_mode;
+    uint8_t enable_host_odd_even : 1;
+    uint8_t enable_shift_interleave : 1;
+    uint8_t enable_shift256 : 1;
+    uint8_t : 1;
+} vga_grc_mode;
 
 typedef enum {
     VGA_MEMORY_MAP_A0000_128K = 0x00,
@@ -70,8 +73,8 @@ typedef enum {
 } vga_memory_map;
 
 typedef struct __attribute__((packed)) {
-    uint8_t graphics_mode : 1;
-    uint8_t chain_odd_even : 1;
+    uint8_t enable_graphics_mode : 1;
+    uint8_t enable_chain_odd_even : 1;
     vga_memory_map memory_map : 2;
     uint8_t : 4;
 } vga_grc_misc;
@@ -290,14 +293,19 @@ typedef enum {
     // 0x02 and 0x03 are implementation-defined
 } vga_clock_speed;
 
+typedef enum {
+    VGA_POLARITY_POSITIVE = 0,
+    VGA_POLARITY_NEGATIVE = 1
+} vga_polarity;
+
 typedef struct __attribute__((packed)) {
     vga_emulation_mode io_emulation_mode : 1;
     uint8_t enable_vram_access : 1;
     vga_clock_speed clock_select : 2;
     uint8_t : 1;
     uint8_t odd_even_select_high_page : 1;
-    uint8_t hsync_polarity : 1;
-    uint8_t vsync_polarity : 1;
+    vga_polarity hsync_polarity : 1;
+    vga_polarity vsync_polarity : 1;
 } vga_misc;
 
 #endif

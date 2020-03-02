@@ -5,6 +5,9 @@
 #include <stdbool.h>
 #include "driver/vga/registers.h"
 
+// TODO: Allow for change
+#define VGA_TEXTMODE_CHARACTER_HEIGHT (16)
+
 struct vga_crt_timings {
     // Values in pixels/scanlines, regardless of 8 or 9 dots per character
     // These fields are in chronological order
