@@ -22,6 +22,9 @@ typedef enum {
     VGA_PLANE_3_BIT = 1 << 3,
 } vga_plane_bits;
 
+#define VGA_PLANE_ALL (VGA_PLANE_0_BIT | VGA_PLANE_1_BIT | VGA_PLANE_2_BIT | VGA_PLANE_3_BIT)
+#define VGA_PLANE_NONE 0
+
 typedef enum {
     VGA_OP_NOP = 0x00,
     VGA_OP_AND = 0x01,

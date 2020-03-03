@@ -25,7 +25,7 @@ void kernel_main(multiboot_info* multiboot) {
     pic_set_mask(0xFFFF); //Disable PIC
     idt_enable();
 
-    test_exception();
+    // test_exception();
 
     if(multiboot->flags & MULTIBOOT_FLAG_BOOT_LOADER_NAME) {
         vga_print("Booted from ");

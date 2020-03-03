@@ -22,7 +22,7 @@ const vga_videomode VGA_VIDEOMODE_640x480x16 = {
     },
     .dot_mode = VGA_DOT_MODE_8_DPC,
     .clock_speed = VGA_CLOCK_SPEED_25MHZ,
-    .enable_graphics = true,
+    .enable_graphics = false,
     .color_depth = VGA_COLOR_DEPTH_16_COLOR
 };
 
@@ -362,7 +362,7 @@ static void set_grc_registers(const vga_videomode* mode) {
 
     io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_COLOR_DONT_CARE);
     VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_color_compare) {
-        .planes = VGA_PLANE_0_BIT | VGA_PLANE_1_BIT | VGA_PLANE_2_BIT | VGA_PLANE_3_BIT
+        .planes = VGA_PLANE_ALL
     }));
 
     io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_BIT_MASK);
@@ -443,7 +443,7 @@ static void set_atc_registers(const vga_videomode* mode) {
 
     prepare_atc(VGA_IND_ATC_COLOR_PLANE_ENABLE);
     VGA_WRITE(VGA_PORT_ATC, ((vga_atc_color_plane_enable) {
-        .planes = VGA_PLANE_0_BIT | VGA_PLANE_1_BIT | VGA_PLANE_2_BIT | VGA_PLANE_3_BIT
+        .planes = VGA_PLANE_ALL
     }));
 
     prepare_atc(VGA_IND_ATC_HORIZ_PIXEL_PANNING);
@@ -451,11 +451,38 @@ static void set_atc_registers(const vga_videomode* mode) {
         .pixel_shift = 0
     }));
 
-    prepare_atc(VGA_IND_ATC_HORIZ_PIXEL_PANNING);
+    prepare_atc(VGA_IND_ATC_COLOR_SELECT);
     VGA_WRITE(VGA_PORT_ATC, ((vga_atc_color_select) {
         .color_select_5_4 = 0,
         .color_select_7_6 = 0
     }));
+}
+
+static void clear_vram(uint8_t planes) {
+    vga_seq_map_mask current_mask;
+    io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_MAP_MASK);
+    VGA_READ(VGA_PORT_SEQ_DATA, &current_mask);
+
+    VGA_WRITE(VGA_PORT_SEQ_DATA, ((vga_seq_map_mask) {
+        .planes = planes
+    }));
+
+    vga_grc_misc grc_misc;
+    io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_MISC);
+    VGA_READ(VGA_PORT_GRC_DATA, &grc_misc);
+    vga_memory_map orig_map = grc_misc.memory_map;
+    grc_misc.memory_map = VGA_MEMORY_MAP_A0000_64K;
+    VGA_WRITE(VGA_PORT_GRC_DATA, grc_misc);
+
+    uint8_t* vram = (uint8_t*) 0xA0000;
+
+    for (size_t i = 0; i < (1 << 16); ++i) {
+        vram[i] = 0;
+    }
+
+    grc_misc.memory_map = orig_map;
+    VGA_WRITE(VGA_PORT_GRC_DATA, grc_misc);
+    VGA_WRITE(VGA_PORT_SEQ_DATA, current_mask);
 }
 
 void vga_set_videomode(const vga_videomode* mode) {
@@ -479,6 +506,7 @@ void vga_set_videomode(const vga_videomode* mode) {
     unblank_and_lock();
 
     reset_cursor();
+    clear_vram(VGA_PLANE_ALL);
 
     dump_registers();
 }
