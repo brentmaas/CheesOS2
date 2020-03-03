@@ -122,9 +122,10 @@ static uint8_t color_depth_pixels_per_address(vga_color_depth color_depth) {
 
 // Assumes CRT registers are unlocked (and leaves them unlocked).
 static void set_crtc_registers(const vga_videomode* mode) {
+    uint8_t h_div = mode->dot_mode == VGA_DOT_MODE_9_DPC ? 9 : 8;
+
     // Set horizontal values
     {
-        uint8_t h_div = mode->dot_mode == VGA_DOT_MODE_9_DPC ? 9 : 8;
 
         uint8_t h_display_end = mode->horizontal_timings.active_area / h_div - 1;
         uint8_t h_blanking_start = h_display_end + mode->horizontal_timings.overscan_back / h_div;
@@ -242,7 +243,8 @@ static void set_crtc_registers(const vga_videomode* mode) {
         VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, (uint8_t) line_compare);
     }
 
-    vga_address_mode address_mode = VGA_ADDRESS_MODE_BYTES;
+    vga_address_mode address_mode = mode->enable_graphics ?
+        VGA_ADDRESS_MODE_BYTES : VGA_ADDRESS_MODE_WORDS;
 
     // Set the other display-generation related values
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_MODE);
@@ -251,14 +253,26 @@ static void set_crtc_registers(const vga_videomode* mode) {
         .map14 = true,
         .enable_half_scanline_clock = false,
         .enable_half_memory_clock = false,
-        .address_wrap_select = true,
+        .address_wrap_select = 1,
         .disable_word_addressing = address_mode != VGA_ADDRESS_MODE_WORDS,
         .enable_sync = true
     }));
 
     uint8_t memory_address_size = VGA_ADDRESS_MODE_SIZE(address_mode);
-    uint8_t pixels_per_address = mode->enable_graphics ? color_depth_pixels_per_address(mode->color_depth) : 1;
-    uint8_t offset = mode->horizontal_timings.active_area / (pixels_per_address * memory_address_size * 2);
+    uint8_t offset;
+
+    if (mode->enable_graphics) {
+        // Equation from FreeVGA
+        uint8_t pixels_per_address = color_depth_pixels_per_address(mode->color_depth);
+        offset = mode->horizontal_timings.active_area / (pixels_per_address * memory_address_size * 2);
+    } else {
+        // The value of the offset field is multiplied by `2 * memory_address_size`
+        // The width in bytes of a column is `columns * memory_address_size`
+        // this yields `columns * memory_address_size / (2 * memory_address_size) =
+        // columns / 2`.
+        uint8_t columns = mode->horizontal_timings.active_area / h_div;
+        offset = columns / 2;
+    }
 
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_OFFSET);
     VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, offset);
@@ -333,7 +347,7 @@ static void set_grc_registers(const vga_videomode* mode) {
     VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_mode) {
         .write_mode = 0,
         .read_mode = 0,
-        .enable_host_odd_even = true,
+        .enable_host_odd_even = !mode->enable_graphics, // Odd-even mode for reading
         .enable_shift_interleave = false,
         .enable_shift256 = false
     }));
@@ -342,14 +356,52 @@ static void set_grc_registers(const vga_videomode* mode) {
     VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_misc) {
         .enable_graphics_mode = mode->enable_graphics,
         .enable_chain_odd_even = false,
-        .memory_map = VGA_MEMORY_MAP_A0000_64K
+        .memory_map = mode->enable_graphics ? // TODO: Just set to A0000
+            VGA_MEMORY_MAP_A0000_64K : VGA_MEMORY_MAP_B8000_32K
     }));
 
     io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_COLOR_DONT_CARE);
-    VGA_WRITE(VGA_PORT_GRC_DATA, (uint8_t) 0);
+    VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_color_compare) {
+        .planes = VGA_PLANE_0_BIT | VGA_PLANE_1_BIT | VGA_PLANE_2_BIT | VGA_PLANE_3_BIT
+    }));
 
     io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_BIT_MASK);
     VGA_WRITE(VGA_PORT_GRC_DATA, (uint8_t) 0xFF);
+}
+
+static void set_sequencer_registers(const vga_videomode* mode) {
+    io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_RESET);
+    VGA_WRITE(VGA_PORT_SEQ_DATA, ((vga_seq_reset) {
+        .synchronous_reset = true,
+        .asynchronous_reset = true
+    }));
+
+    io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_CLOCKING_MODE);
+    VGA_WRITE(VGA_PORT_SEQ_DATA, ((vga_seq_clocking_mode) {
+        .dot_mode = mode->dot_mode,
+        .shift_load_rate = 0,
+        .enable_half_dot_clock = false, // TODO: set for 320 and 360 resolutions
+        .enable_shift_4 = false,
+        .disable_display = false
+    }));
+
+    io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_MAP_MASK);
+    VGA_WRITE(VGA_PORT_SEQ_DATA, ((vga_seq_map_mask) {
+        // In text modes, planes 0 and 1 are used in odd/even mode
+        // Graphics modes use planar mode
+        .planes = VGA_PLANE_0_BIT | VGA_PLANE_1_BIT |
+            (mode->enable_graphics ? 0 : (VGA_PLANE_2_BIT | VGA_PLANE_3_BIT))
+    }));
+
+    io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_MAP_MASK);
+    VGA_WRITE(VGA_IND_SEQ_CHARACTER_MAP_SELECT, (uint8_t) 0);
+
+    io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_MEMORY_MODE);
+    VGA_WRITE(VGA_PORT_SEQ_DATA, ((vga_seq_memory_mode) {
+        .extended_memory = true,
+        .disable_odd_even = mode->enable_graphics,
+        .enable_chain_4 = false
+    }));
 }
 
 void vga_set_videomode(const vga_videomode* mode) {
@@ -367,11 +419,8 @@ void vga_set_videomode(const vga_videomode* mode) {
     blank_and_unlock();
     set_crtc_registers(mode);
     reset_cursor();
-    // TODO: Display memory access
-    // TODO: Display sequencing
-    // TODO: Cursor
-    // TODO: Attributes
-    // TODO: DAC
+    set_grc_registers(mode);
+    set_sequencer_registers(mode);
     unblank_and_lock();
 
     dump_registers();

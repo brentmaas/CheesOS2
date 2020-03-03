@@ -106,7 +106,7 @@ typedef struct __attribute__((packed)) {
     uint8_t shift_load_rate : 1;
     uint8_t enable_half_dot_clock : 1;
     uint8_t enable_shift_4 : 1;
-    uint8_t disable_screen : 1;
+    uint8_t disable_display : 1;
     uint8_t : 2;
 } vga_seq_clocking_mode;
 
