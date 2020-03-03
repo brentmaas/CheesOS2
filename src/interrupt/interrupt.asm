@@ -23,6 +23,8 @@ idt_disable:
 
 %macro interrupt_no_status 1
 interrupt_handler_%1:
+    ; hlt ; TODO: REMOVE
+
     ; Save registers
     pusha
 
@@ -35,12 +37,14 @@ interrupt_handler_%1:
     push edx
     ; Push registers
     push eax
+    ; Push interrupt number
+    push DWORD %1
 
     ; Call handler
     call [idt_callback_routines+4*%1]
 
     ; Restore stack and registers
-    add esp, 8
+    add esp, 12
     popa
 
     ; Return from interrupt handler
@@ -66,12 +70,14 @@ interrupt_handler_%1:
     push eax
     ; Push registers
     push edx
+    ; Push interrupt number
+    push DWORD %1
 
     ; Call handler
     call [idt_callback_routines+4*%1]
 
     ; Restore stack and registers
-    add esp, 12
+    add esp, 16
     popa
 
     ; Return from interrupt handler

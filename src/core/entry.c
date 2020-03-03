@@ -23,6 +23,10 @@ void kernel_main(multiboot_info* multiboot) {
     pic_set_mask(0xFFFF); //Disable PIC
     idt_enable();
 
+    asm volatile (
+        "ud2\n"
+    );
+
     if(multiboot->flags & MULTIBOOT_FLAG_BOOT_LOADER_NAME) {
         vga_print("Booted from ");
         vga_print(multiboot->boot_loader_name);

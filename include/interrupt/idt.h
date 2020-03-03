@@ -31,7 +31,7 @@ typedef enum {
 typedef enum {
     IDT_FLAG_STORAGE = 1 << 0,
     IDT_FLAG_IOPL = (1 << 1) | (1 << 2),
-    IDT_FLAG_PRESENT = 1 << 4
+    IDT_FLAG_PRESENT = 1 << 3
 } idt_flag_type;
 
 #define IDT_PRIVILEGE_0 (0u)
@@ -39,15 +39,14 @@ typedef enum {
 #define IDT_PRIVILEGE_2 (1u << 2u)
 #define IDT_PRIVILEGE_3 ((1u << 1u) | (1u << 2u))
 
-typedef void(*interrupt_no_status)(interrupt_registers*, interrupt_parameters*);
-typedef void(*interrupt_status)(interrupt_registers*, interrupt_parameters*, uint32_t);
+typedef void(*interrupt_no_status)(uint32_t, interrupt_registers*, interrupt_parameters*);
+typedef void(*interrupt_status)(uint32_t, interrupt_registers*, interrupt_parameters*, uint32_t);
 
 void idt_init(void);
 void idt_enable(void);
 void idt_disable(void);
 
-
-void idt_make_interrupt(size_t interrupt, void* callback, idt_gate_type callback_type, idt_flag_type flags);
+//NOTE TO ROBIN: DO NOT CALL UNLESS INTERRUPTS ARE DISABLED
 void idt_make_interrupt_no_status(size_t interrupt, interrupt_no_status callback, idt_gate_type callback_type, idt_flag_type flags);
 void idt_make_interrupt_status(size_t interrupt, interrupt_status callback, idt_gate_type callback_type, idt_flag_type flags);
 
