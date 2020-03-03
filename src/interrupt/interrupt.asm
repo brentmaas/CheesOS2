@@ -6,6 +6,8 @@ GLOBAL idt_enable
 GLOBAL idt_disable
 GLOBAL idt_create_handler_table
 
+EXTERN debug_memdump
+
 SECTION .text
 
 idt_load:
@@ -23,15 +25,13 @@ idt_disable:
 
 %macro interrupt_no_status 1
 interrupt_handler_%1:
-    ; hlt ; TODO: REMOVE
-
     ; Save registers
     pusha
 
     ; Fetch syscall parameters
-    lea eax, [esp+104]
+    lea edx, [esp+32]
     ; Fetch registers
-    mov edx, esp
+    mov eax, esp
 
     ; Push syscall parameters as argument
     push edx
@@ -58,11 +58,11 @@ interrupt_handler_%1:
     pusha
 
     ; Fetch syscall parameters
-    lea eax, [esp+108]
+    lea eax, [esp+36]
     ; Fetch registers
     mov edx, esp
     ; Fetch status code
-    mov ecx, [esp+72]
+    mov ecx, [esp+32]
 
     ; Push status code
     push ecx

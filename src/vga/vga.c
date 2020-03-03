@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+#define TAB_SIZE (4u)
+
 static size_t vga_row, vga_column;
 static uint8_t vga_current_color;
 static volatile uint16_t* const vga_buffer = (uint16_t*)0xB8000;
@@ -15,6 +17,12 @@ static uint16_t vga_make_char(char c, uint8_t color) {
 }
 
 static void vga_write_char(char c, uint8_t color) {
+    if(c == '\t') {
+        size_t num_vals = vga_column % TAB_SIZE == 0 ? TAB_SIZE : vga_column % TAB_SIZE;
+        for(size_t i = 0; i < num_vals; ++i)
+            vga_write_char(' ', color);
+        return;
+    }
     if(c == '\n' || vga_column >= VGA_WIDTH) {
         vga_column = 0;
         ++vga_row;
