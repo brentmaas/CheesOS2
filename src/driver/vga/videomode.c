@@ -369,7 +369,7 @@ static void set_grc_registers(const vga_videomode* mode) {
     VGA_WRITE(VGA_PORT_GRC_DATA, (uint8_t) 0xFF);
 }
 
-static void set_sequencer_registers(const vga_videomode* mode) {
+static void set_seq_registers(const vga_videomode* mode) {
     io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_RESET);
     VGA_WRITE(VGA_PORT_SEQ_DATA, ((vga_seq_reset) {
         .synchronous_reset = true,
@@ -404,9 +404,61 @@ static void set_sequencer_registers(const vga_videomode* mode) {
     }));
 }
 
+static void prepare_atc(uint8_t index) {
+    sync_atc();
+
+    VGA_WRITE(VGA_PORT_ATC, ((vga_atc_address) {
+        .attribute_address = index,
+        .lock_palette = false
+    }));
+}
+
+// Assumes display is blanked and unlocked.
+static void set_atc_registers(const vga_videomode* mode) {
+    // TODO: Allow more control
+    for (uint8_t i = 0; i < 16; ++i) {
+        prepare_atc(i);
+        VGA_WRITE(VGA_PORT_ATC, i);
+    }
+
+    prepare_atc(VGA_IND_ATC_MODE_CONTROL);
+    VGA_WRITE(VGA_PORT_ATC, ((vga_atc_mode_control) {
+        .enable_graphics = mode->enable_graphics,
+        .enable_monochrome_emulation = false,
+        .enable_line_graphics = true,
+        .enable_blink = true, // TODO: Allow more control
+        .enable_bottom_pixel_pan = false,
+        .enable_256_color = mode->color_depth == VGA_COLOR_DEPTH_256_COLOR,
+        .enable_color_select = false
+    }));
+
+    sync_atc();
+    VGA_WRITE(VGA_PORT_ATC, ((vga_atc_address) {
+        .attribute_address = VGA_IND_ATC_OVERSCAN_COLOR,
+        .lock_palette = true
+    }));
+
+    prepare_atc(VGA_IND_ATC_OVERSCAN_COLOR);
+    VGA_WRITE(VGA_PORT_ATC, (uint8_t) 0); // TODO: More control
+
+    prepare_atc(VGA_IND_ATC_COLOR_PLANE_ENABLE);
+    VGA_WRITE(VGA_PORT_ATC, ((vga_atc_color_plane_enable) {
+        .planes = VGA_PLANE_0_BIT | VGA_PLANE_1_BIT | VGA_PLANE_2_BIT | VGA_PLANE_3_BIT
+    }));
+
+    prepare_atc(VGA_IND_ATC_HORIZ_PIXEL_PANNING);
+    VGA_WRITE(VGA_PORT_ATC, ((vga_atc_horiz_pixel_panning) {
+        .pixel_shift = 0
+    }));
+
+    prepare_atc(VGA_IND_ATC_HORIZ_PIXEL_PANNING);
+    VGA_WRITE(VGA_PORT_ATC, ((vga_atc_color_select) {
+        .color_select_5_4 = 0,
+        .color_select_7_6 = 0
+    }));
+}
+
 void vga_set_videomode(const vga_videomode* mode) {
-    // Make sure the right address space is selected
-    // TODO: write the rest of misc
     VGA_WRITE(VGA_PORT_MISC_WRITE, ((vga_misc) {
         .io_emulation_mode = VGA_EMULATION_MODE_COLOR,
         .enable_vram_access = 1,
@@ -416,12 +468,17 @@ void vga_set_videomode(const vga_videomode* mode) {
         .vsync_polarity = VGA_POLARITY_NEGATIVE,
     }));
 
+    // TODO: Fonts
+    // TODO: Palette
+
     blank_and_unlock();
     set_crtc_registers(mode);
-    reset_cursor();
     set_grc_registers(mode);
-    set_sequencer_registers(mode);
+    set_seq_registers(mode);
+    set_atc_registers(mode);
     unblank_and_lock();
+
+    reset_cursor();
 
     dump_registers();
 }

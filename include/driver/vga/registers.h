@@ -157,10 +157,8 @@ typedef struct __attribute__((packed)) {
     uint8_t : 1;
     uint8_t enable_bottom_pixel_pan : 1;
     uint8_t enable_256_color : 1;
-    uint8_t p45s : 1;
+    uint8_t enable_color_select : 1;
 } vga_atc_mode_control;
-
-typedef uint8_t vga_atc_overscan_color;
 
 typedef struct __attribute__((packed)) {
     vga_plane_bits planes : 4;
