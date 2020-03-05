@@ -15,8 +15,6 @@ void initialize_vga_new() {
     vga_set_videomode(&VGA_VIDEOMODE_640x480x16);
 }
 
-void test_exception(void);
-
 void kernel_main(multiboot_info* multiboot) {
     vga_init();
     gdt_init();
@@ -24,8 +22,6 @@ void kernel_main(multiboot_info* multiboot) {
     pic_remap(0x20, 0x28);
     pic_set_mask(0xFFFF); //Disable PIC
     idt_enable();
-
-    // test_exception();
 
     if(multiboot->flags & MULTIBOOT_FLAG_BOOT_LOADER_NAME) {
         vga_print("Booted from ");

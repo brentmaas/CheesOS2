@@ -27,14 +27,3 @@ _start:
     
     cli
     hlt
-
-GLOBAL test_exception
-test_exception:
-    xor eax, eax
-    mov edx, 1
-    mov ecx, 2
-    mov ebx, 3
-    mov esi, 4
-    mov edi, 5
-    test eax, eax
-    ud2
