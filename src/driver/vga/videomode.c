@@ -1,5 +1,5 @@
 #include "driver/vga/videomode.h"
-#include "driver/vga/ports.h"
+#include "driver/vga/io.h"
 #include "core/io.h"
 #include <stdio.h>
 
@@ -26,28 +26,6 @@ const vga_videomode VGA_VIDEOMODE_640x480x16 = {
     .color_depth = VGA_COLOR_DEPTH_16_COLOR
 };
 
-#define VGA_READ(port, reg_ptr)                                 \
-    do {                                                        \
-        _Static_assert(sizeof(uint8_t) == sizeof(*reg_ptr));    \
-        *(reg_ptr) = (union{                                    \
-            uint8_t a;                                          \
-            typeof(*(reg_ptr)) b;                               \
-        }){.a = io_in8(port)}.b;                                \
-    } while(0)
-
-#define VGA_WRITE(port, reg)                                    \
-    do {                                                        \
-        _Static_assert(sizeof(uint8_t) == sizeof(reg));         \
-        io_out8(port, (union{                                   \
-            uint8_t a;                                          \
-            typeof(reg) b;                                      \
-        }){.b = (reg)}.a);                                      \
-    } while(0)
-
-static void sync_atc() {
-    (void) io_in8(VGA_PORT_INPUT_STATUS_1_COLOR);
-}
-
 static void dump_registers() {
     printf("misc:\n    %02X\nsequencer:\n    ", io_in8(VGA_PORT_MISC_READ));
     for (size_t i = 0; i < VGA_NUM_SEQ_INDICES; ++i) {
@@ -72,7 +50,7 @@ static void dump_registers() {
     printf("\natc:");
     for (size_t i = 0; i < VGA_NUM_ATC_INDICES; ++i) {
         if (i % 8 == 0) printf("\n    ");
-        sync_atc();
+        vga_sync_atc();
         VGA_WRITE(VGA_PORT_ATC, ((vga_atc_address) {
             .attribute_address = i,
             .lock_palette = true
@@ -103,7 +81,7 @@ static void unblank_and_lock() {
     VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, v_retrace_end);
 
     vga_atc_address lock_palette = {.lock_palette = true};
-    sync_atc();
+    vga_sync_atc();
     VGA_WRITE(VGA_PORT_ATC, lock_palette);
 }
 
@@ -356,7 +334,7 @@ static void set_grc_registers(const vga_videomode* mode) {
     VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_misc) {
         .enable_graphics_mode = mode->enable_graphics,
         .enable_chain_odd_even = false,
-        .memory_map = mode->enable_graphics ? // TODO: Just set to A0000
+        .memory_map = mode->enable_graphics ?
             VGA_MEMORY_MAP_A0000_64K : VGA_MEMORY_MAP_B8000_32K
     }));
 
@@ -393,7 +371,7 @@ static void set_seq_registers(const vga_videomode* mode) {
             (mode->enable_graphics ? 0 : (VGA_PLANE_2_BIT | VGA_PLANE_3_BIT))
     }));
 
-    io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_MAP_MASK);
+    io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_CHARACTER_MAP_SELECT);
     VGA_WRITE(VGA_IND_SEQ_CHARACTER_MAP_SELECT, (uint8_t) 0);
 
     io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_MEMORY_MODE);
@@ -404,54 +382,45 @@ static void set_seq_registers(const vga_videomode* mode) {
     }));
 }
 
-static void prepare_atc(uint8_t index) {
-    sync_atc();
-
-    VGA_WRITE(VGA_PORT_ATC, ((vga_atc_address) {
-        .attribute_address = index,
-        .lock_palette = false
-    }));
-}
-
 // Assumes display is blanked and unlocked.
 static void set_atc_registers(const vga_videomode* mode) {
     // TODO: Allow more control
     for (uint8_t i = 0; i < 16; ++i) {
-        prepare_atc(i);
+        vga_prepare_atc(i);
         VGA_WRITE(VGA_PORT_ATC, i);
     }
 
-    prepare_atc(VGA_IND_ATC_MODE_CONTROL);
+    vga_prepare_atc(VGA_IND_ATC_MODE_CONTROL);
     VGA_WRITE(VGA_PORT_ATC, ((vga_atc_mode_control) {
         .enable_graphics = mode->enable_graphics,
         .enable_monochrome_emulation = false,
         .enable_line_graphics = true,
-        .enable_blink = true, // TODO: Allow more control
+        .enable_blink = false, // TODO: Allow more control
         .enable_bottom_pixel_pan = false,
         .enable_256_color = mode->color_depth == VGA_COLOR_DEPTH_256_COLOR,
         .enable_color_select = false
     }));
 
-    sync_atc();
+    vga_sync_atc();
     VGA_WRITE(VGA_PORT_ATC, ((vga_atc_address) {
         .attribute_address = VGA_IND_ATC_OVERSCAN_COLOR,
         .lock_palette = true
     }));
 
-    prepare_atc(VGA_IND_ATC_OVERSCAN_COLOR);
+    vga_prepare_atc(VGA_IND_ATC_OVERSCAN_COLOR);
     VGA_WRITE(VGA_PORT_ATC, (uint8_t) 0); // TODO: More control
 
-    prepare_atc(VGA_IND_ATC_COLOR_PLANE_ENABLE);
+    vga_prepare_atc(VGA_IND_ATC_COLOR_PLANE_ENABLE);
     VGA_WRITE(VGA_PORT_ATC, ((vga_atc_color_plane_enable) {
         .planes = VGA_PLANE_ALL
     }));
 
-    prepare_atc(VGA_IND_ATC_HORIZ_PIXEL_PANNING);
+    vga_prepare_atc(VGA_IND_ATC_HORIZ_PIXEL_PANNING);
     VGA_WRITE(VGA_PORT_ATC, ((vga_atc_horiz_pixel_panning) {
         .pixel_shift = 0
     }));
 
-    prepare_atc(VGA_IND_ATC_COLOR_SELECT);
+    vga_prepare_atc(VGA_IND_ATC_COLOR_SELECT);
     VGA_WRITE(VGA_PORT_ATC, ((vga_atc_color_select) {
         .color_select_5_4 = 0,
         .color_select_7_6 = 0
@@ -474,7 +443,7 @@ static void clear_vram(uint8_t planes) {
     grc_misc.memory_map = VGA_MEMORY_MAP_A0000_64K;
     VGA_WRITE(VGA_PORT_GRC_DATA, grc_misc);
 
-    volatile uint8_t* vram = (uint8_t*) 0xA0000;
+    volatile uint8_t* vram = (volatile uint8_t*) 0xA0000;
 
     for (size_t i = 0; i < (1 << 16); ++i) {
         vram[i] = 0;
@@ -487,7 +456,7 @@ static void clear_vram(uint8_t planes) {
 
 // Debug graphics
 static void set_pixel_16(uint16_t x, uint16_t y) {
-    volatile uint8_t* vram = (uint8_t*) 0xA0000;
+    volatile uint8_t* vram = (volatile uint8_t*) 0xA0000;
     size_t byte = y * 80 + x / 8;
     size_t shift = 7 - x % 8;
 
@@ -619,9 +588,6 @@ void vga_set_videomode(const vga_videomode* mode) {
         .hsync_polarity = VGA_POLARITY_NEGATIVE,
         .vsync_polarity = VGA_POLARITY_NEGATIVE,
     }));
-
-    // TODO: Fonts
-    // TODO: Palette
 
     blank_and_unlock();
     set_crtc_registers(mode);

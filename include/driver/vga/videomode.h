@@ -46,11 +46,12 @@ typedef struct {
     vga_dot_mode dot_mode : 1;
     vga_clock_speed clock_speed : 2;
     bool enable_graphics : 1;
-    vga_color_depth color_depth : 2;
+    vga_color_depth color_depth : 2; // Only used in graphics mode
 } vga_videomode;
 
 extern const vga_videomode VGA_VIDEOMODE_640x480x16;
 
+void vga_prepare_atc(uint8_t index);
 void vga_set_videomode(const vga_videomode* mode);
 
 #endif
