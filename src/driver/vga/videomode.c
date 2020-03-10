@@ -27,6 +27,12 @@ const vga_videomode VGA_VIDEOMODE_640x480x16 = {
     .color_depth = VGA_COLOR_DEPTH_16_COLOR
 };
 
+static struct {
+    uint16_t width_pixels;
+    uint16_t height_pixels;
+    uint8_t width_chars;
+} VGA_SETTINGS = {};
+
 static void dump_registers() {
     printf("misc:\n    %02X\nsequencer:\n    ", io_in8(VGA_PORT_MISC_READ));
     for (size_t i = 0; i < VGA_NUM_SEQ_INDICES; ++i) {
@@ -588,5 +594,23 @@ void vga_set_videomode(const vga_videomode* mode) {
     reset_cursor();
     clear_vram(VGA_PLANE_ALL);
 
+    VGA_SETTINGS.width_pixels = mode->horizontal_timings.active_area;
+    VGA_SETTINGS.height_pixels = mode->vertical_timings.active_area;
+
+    uint8_t h_div = mode->dot_mode == VGA_DOT_MODE_9_DPC ? 9 : 8;
+    VGA_SETTINGS.width_chars = mode->horizontal_timings.active_area / h_div;
+
     draw_python();
+}
+
+uint16_t vga_get_width_pixels() {
+    return VGA_SETTINGS.width_pixels;
+}
+
+uint16_t vga_get_height_pixels() {
+    return VGA_SETTINGS.height_pixels;
+}
+
+uint8_t vga_get_width_chars() {
+    return VGA_SETTINGS.width_chars;
 }

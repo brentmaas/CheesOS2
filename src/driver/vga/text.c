@@ -2,6 +2,7 @@
 #include "driver/vga/io.h"
 #include "driver/vga/registers.h"
 #include "driver/vga/util.h"
+#include "driver/vga/videomode.h"
 #include "core/io.h"
 #include <stddef.h>
 
@@ -11,13 +12,48 @@ static const vga_plane_bits ATTR_PLANE = VGA_PLANE_1_BIT;
 static const vga_plane_bits FONT_PLANE = VGA_PLANE_2_BIT;
 static const vga_plane_bits TEXT_PLANES = CHAR_PLANE | ATTR_PLANE;
 
+static struct {
+    uint8_t height_chars;
+} VGA_TEXT_SETTINGS = {};
+
 // Offset in bytes in plane 2 of the charset
 static uint16_t charset_offset(uint8_t charset) {
     return charset * 0x4000;
 }
 
-void vga_set_char(uint8_t col, uint8_t row, uint8_t value, uint8_t attr) {
+void vga_write_str(uint8_t col, uint8_t row, const char* ptr, uint8_t attr) {
+    if (col >= vga_get_width_chars() || row >= vga_get_height_chars()) {
+        return;
+    }
 
+    uint16_t offset = (uint16_t) col * vga_get_width_chars() + row;
+    uint16_t buf_max = vga_get_width_chars() * vga_get_height_chars();
+    while (offset < buf_max && *ptr) {
+        TEXT_VRAM[offset++] = *ptr++;
+    }
+}
+
+void vga_write_char(uint8_t col, uint8_t row, uint8_t value, uint8_t attr) {
+    if (col >= vga_get_width_chars() || row >= vga_get_height_chars()) {
+        return;
+    }
+
+    uint16_t offset = (uint16_t) col * vga_get_width_chars() + row;
+    TEXT_VRAM[offset * 2] = value;
+    TEXT_VRAM[offset * 2 + 1] = attr;
+}
+
+void vga_set_cursor(uint8_t col, uint8_t row) {
+    if (col >= vga_get_width_chars() || row >= vga_get_height_chars()) {
+        return;
+    }
+
+    uint16_t offset = (uint16_t) col * vga_get_width_chars() + row;
+
+    io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_CURSOR_LOCATION_HIGH);
+    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, (uint8_t) (offset >> 16));
+    io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_CURSOR_LOCATION_LOW);
+    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, (uint8_t) offset);
 }
 
 void vga_upload_font(uint8_t charset, const vga_font* font) {
@@ -75,6 +111,8 @@ void vga_set_fontopts(const vga_font_options* fopts) {
         .cursor_scan_line_end = fopts->cursor.end,
         .cursor_skew = 0
     }));
+
+    VGA_TEXT_SETTINGS.height_chars = vga_get_height_pixels() / fopts->text_height;
 }
 
 void vga_enable_cursor(bool enabled) {
@@ -83,4 +121,8 @@ void vga_enable_cursor(bool enabled) {
     VGA_READ(VGA_PORT_CRTC_COLOR_DATA, &cursor_start);
     cursor_start.disable_cursor = !enabled;
     VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, cursor_start);
+}
+
+uint8_t vga_get_height_chars() {
+    return VGA_TEXT_SETTINGS.height_chars;
 }
