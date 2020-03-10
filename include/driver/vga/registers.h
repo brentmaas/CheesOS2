@@ -1,6 +1,8 @@
 #ifndef _CHEESOS2_DRIVER_VGA_REGISTERS_H
 #define _CHEESOS2_DRIVER_VGA_REGISTERS_H
 
+#include <stdint.h>
+
 // Graphics registers
 typedef enum {
     VGA_IND_GRC_SET_RESET = 0x00,
@@ -74,6 +76,18 @@ typedef enum {
     VGA_MEMORY_MAP_B0000_32K = 0x02,
     VGA_MEMORY_MAP_B8000_32K = 0x03
 } vga_memory_map;
+
+static volatile uint8_t* vga_memory_map_ptr(vga_memory_map map) {
+    switch (map) {
+        case VGA_MEMORY_MAP_A0000_128K:
+        case VGA_MEMORY_MAP_A0000_64K:
+            return (volatile uint8_t*) 0xA0000;
+        case VGA_MEMORY_MAP_B0000_32K:
+            return (volatile uint8_t*) 0xB0000;
+        case VGA_MEMORY_MAP_B8000_32K:
+            return (volatile uint8_t*) 0xB8000;
+    }
+}
 
 typedef struct __attribute__((packed)) {
     uint8_t enable_graphics_mode : 1;

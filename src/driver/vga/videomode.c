@@ -1,5 +1,6 @@
 #include "driver/vga/videomode.h"
 #include "driver/vga/io.h"
+#include "driver/vga/util.h"
 #include "core/io.h"
 #include <stdio.h>
 
@@ -428,30 +429,17 @@ static void set_atc_registers(const vga_videomode* mode) {
 }
 
 static void clear_vram(uint8_t planes) {
-    vga_seq_map_mask current_mask;
-    io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_MAP_MASK);
-    VGA_READ(VGA_PORT_SEQ_DATA, &current_mask);
+    const vga_memory_map map = VGA_MEMORY_MAP_A0000_64K;
+    vga_plane_bits orig_mask = vga_mask_planes(planes);
+    vga_memory_map orig_map = vga_map_memory(map);
 
-    VGA_WRITE(VGA_PORT_SEQ_DATA, ((vga_seq_map_mask) {
-        .planes = planes
-    }));
-
-    vga_grc_misc grc_misc;
-    io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_MISC);
-    VGA_READ(VGA_PORT_GRC_DATA, &grc_misc);
-    vga_memory_map orig_map = grc_misc.memory_map;
-    grc_misc.memory_map = VGA_MEMORY_MAP_A0000_64K;
-    VGA_WRITE(VGA_PORT_GRC_DATA, grc_misc);
-
-    volatile uint8_t* vram = (volatile uint8_t*) 0xA0000;
-
+    volatile uint8_t* vram = vga_memory_map_ptr(map);
     for (size_t i = 0; i < (1 << 16); ++i) {
         vram[i] = 0;
     }
 
-    grc_misc.memory_map = orig_map;
-    VGA_WRITE(VGA_PORT_GRC_DATA, grc_misc);
-    VGA_WRITE(VGA_PORT_SEQ_DATA, current_mask);
+    vga_map_memory(orig_map);
+    vga_mask_planes(orig_mask);
 }
 
 // Debug graphics
@@ -464,6 +452,7 @@ static void set_pixel_16(uint16_t x, uint16_t y) {
     io_out8(VGA_PORT_GRC_DATA, 1 << shift);
     (void) vram[byte]; // load latch
     vram[byte] = 0xFF;
+    // TODO: What to do with shift?
 }
 
 static int abs(int x) {

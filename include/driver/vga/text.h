@@ -10,9 +10,11 @@
 // The GRC registers (set/reset, enable set/reset, data rotate, operation)
 // are assumed to be 0.
 
-typedef struct __attribute__((packed)) {
-    uint8_t rows[32];
-} vga_glyph;
+#define VGA_FONT_ROWS 32
+#define VGA_FONT_GLYPHS 256
+
+typedef uint8_t vga_glyph[VGA_FONT_ROWS];
+typedef vga_glyph vga_font[VGA_FONT_GLYPHS];
 
 typedef struct {
     uint8_t text_height;
@@ -26,7 +28,7 @@ typedef struct {
 
 void vga_set_char(uint8_t col, uint8_t row, uint8_t value, uint8_t attr);
 
-void vga_upload_font(uint8_t charset, const vga_glyph* font);
+void vga_upload_font(uint8_t charset, const vga_font* font);
 void vga_set_charsets(uint8_t charset_a, uint8_t charset_b);
 void vga_set_fontopts(const vga_font_options* fopts);
 void vga_enable_cursor(bool enabled);
