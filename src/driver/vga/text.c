@@ -21,6 +21,14 @@ static uint16_t charset_offset(uint8_t charset) {
     return charset * 0x4000;
 }
 
+void vga_clear_text() {
+    uint16_t buf_max = vga_get_width_chars() * vga_get_height_chars();
+
+    for (size_t i = 0; i < buf_max; ++i) {
+        TEXT_VRAM[i] = 0;
+    }
+}
+
 void vga_write_str(uint8_t col, uint8_t row, const char* ptr, uint8_t attr) {
     if (col >= vga_get_width_chars() || row >= vga_get_height_chars()) {
         return;
@@ -56,6 +64,14 @@ void vga_set_cursor(uint8_t col, uint8_t row) {
     VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, (uint8_t) offset);
 }
 
+void vga_enable_cursor(bool enabled) {
+    io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_CURSOR_START);
+    vga_crtc_cursor_start cursor_start;
+    VGA_READ(VGA_PORT_CRTC_COLOR_DATA, &cursor_start);
+    cursor_start.disable_cursor = !enabled;
+    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, cursor_start);
+}
+
 void vga_upload_font(uint8_t charset, const vga_font* font) {
     const vga_memory_map map = VGA_MEMORY_MAP_A0000_64K;
     volatile uint8_t* vram = vga_memory_map_ptr(map);
@@ -66,7 +82,7 @@ void vga_upload_font(uint8_t charset, const vga_font* font) {
 
     for (size_t i = 0; i < VGA_FONT_GLYPHS; ++i) {
         for (size_t j = 0; j < VGA_FONT_ROWS; ++j) {
-            size_t k = i * VGA_FONT_ROWS + j;
+            size_t k = i * VGA_FONT_ROWS + j + charset_offset(charset);
             vram[k] = (*font)[i][j];
         }
     }
@@ -113,14 +129,6 @@ void vga_set_fontopts(const vga_font_options* fopts) {
     }));
 
     VGA_TEXT_SETTINGS.height_chars = vga_get_height_pixels() / fopts->text_height;
-}
-
-void vga_enable_cursor(bool enabled) {
-    io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_CURSOR_START);
-    vga_crtc_cursor_start cursor_start;
-    VGA_READ(VGA_PORT_CRTC_COLOR_DATA, &cursor_start);
-    cursor_start.disable_cursor = !enabled;
-    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, cursor_start);
 }
 
 uint8_t vga_get_height_chars() {
