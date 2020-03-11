@@ -13,7 +13,7 @@
 #include "driver/vga/palette.h"
 
 void initialize_vga_new() {
-    vga_set_videomode(&VGA_VIDEOMODE_640x480x16);
+    vga_set_videomode(&VGA_VIDEOMODE_640x480, VGA_MODE_GRAPHICS_16_COLOR);
     const vga_dac_color colors[] = {
         {0, 0, 0}, {0, 0, 32}, {0, 32, 0}, {0, 32, 32},
         {32, 0, 0}, {32, 0, 32}, {32, 32, 0}, {48, 48, 48},

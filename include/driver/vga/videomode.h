@@ -5,8 +5,7 @@
 #include <stdbool.h>
 #include "driver/vga/registers.h"
 
-// TODO: Allow for change
-#define VGA_TEXTMODE_CHARACTER_HEIGHT (16)
+#define VGA_DEFAULT_CHARACTER_HEIGHT (16)
 
 struct vga_crt_timings {
     // Values in pixels/scanlines, regardless of 8 or 9 dots per character
@@ -21,11 +20,12 @@ struct vga_crt_timings {
 };
 
 typedef enum {
-    VGA_COLOR_DEPTH_2_COLOR,
-    VGA_COLOR_DEPTH_4_COLOR,
-    VGA_COLOR_DEPTH_16_COLOR,
-    VGA_COLOR_DEPTH_256_COLOR
-} vga_color_depth;
+    VGA_MODE_TEXT,
+    VGA_MODE_GRAPHICS_2_COLOR,
+    VGA_MODE_GRAPHICS_4_COLOR,
+    VGA_MODE_GRAPHICS_16_COLOR,
+    VGA_MODE_GRAPHICS_256_COLOR
+} vga_mode;
 
 // Return the amount of bits required to store a value for a particular color depth
 #define VGA_COLOR_DEPTH_REQUIRED_BITS(color_depth) (1 << (color_depth))
@@ -45,14 +45,12 @@ typedef struct {
 
     vga_dot_mode dot_mode : 1;
     vga_clock_speed clock_speed : 2;
-    bool enable_graphics : 1;
-    vga_color_depth color_depth : 2; // Only used in graphics mode
 } vga_videomode;
 
-extern const vga_videomode VGA_VIDEOMODE_640x480x16;
+extern const vga_videomode VGA_VIDEOMODE_640x480;
 
 void vga_prepare_atc(uint8_t index);
-void vga_set_videomode(const vga_videomode* mode);
+void vga_set_videomode(const vga_videomode* vidmode, vga_mode mode);
 
 uint16_t vga_get_width_pixels();
 uint16_t vga_get_height_pixels();
