@@ -508,11 +508,6 @@ static void line(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) {
     }
 }
 
-// 00000000
-// 00001111
-// 00110011
-// 01010101
-
 static void debug_draw() {
     for (size_t i = 0; i < 16; ++i) {
         for (size_t j = 0; j < 16; ++j) {
