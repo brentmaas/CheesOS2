@@ -370,13 +370,12 @@ static void set_seq_registers(const vga_videomode* mode) {
         .disable_display = false
     }));
 
-    io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_MAP_MASK);
-    VGA_WRITE(VGA_PORT_SEQ_DATA, ((vga_seq_map_mask) {
-        // In text modes, planes 0 and 1 are used in odd/even mode
-        // Graphics modes use planar mode
-        .planes = VGA_PLANE_0_BIT | VGA_PLANE_1_BIT |
-            (mode->enable_graphics ? 0 : (VGA_PLANE_2_BIT | VGA_PLANE_3_BIT))
-    }));
+    // In text modes, planes 0 and 1 are used in odd/even mode
+    // Graphics modes use planar mode
+    vga_mask_planes(
+        VGA_PLANE_0_BIT | VGA_PLANE_1_BIT |
+            (mode->enable_graphics ? (VGA_PLANE_2_BIT | VGA_PLANE_3_BIT) : 0)
+    );
 
     io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_CHARACTER_MAP_SELECT);
     VGA_WRITE(VGA_IND_SEQ_CHARACTER_MAP_SELECT, (uint8_t) 0);
@@ -402,10 +401,10 @@ static void set_atc_registers(const vga_videomode* mode) {
         .enable_graphics = mode->enable_graphics,
         .enable_monochrome_emulation = false,
         .enable_line_graphics = true,
-        .enable_blink = false, // TODO: Allow more control
+        .enable_blink = false,
         .enable_bottom_pixel_pan = false,
         .enable_256_color = mode->color_depth == VGA_COLOR_DEPTH_256_COLOR,
-        .enable_color_select = false
+        .enable_p45_color_select = false
     }));
 
     vga_sync_atc();
@@ -415,7 +414,7 @@ static void set_atc_registers(const vga_videomode* mode) {
     }));
 
     vga_prepare_atc(VGA_IND_ATC_OVERSCAN_COLOR);
-    VGA_WRITE(VGA_PORT_ATC, (uint8_t) 0); // TODO: More control
+    VGA_WRITE(VGA_PORT_ATC, (uint8_t) 0);
 
     vga_prepare_atc(VGA_IND_ATC_COLOR_PLANE_ENABLE);
     VGA_WRITE(VGA_PORT_ATC, ((vga_atc_color_plane_enable) {
@@ -458,7 +457,23 @@ static void set_pixel_16(uint16_t x, uint16_t y) {
     io_out8(VGA_PORT_GRC_DATA, 1 << shift);
     (void) vram[byte]; // load latch
     vram[byte] = 0xFF;
-    // TODO: What to do with shift?
+    // TODO: What to do with mask?
+}
+
+static void set_pixel_16_color(uint16_t x, uint16_t y, uint8_t color) {
+    volatile uint8_t* vram = (volatile uint8_t*) 0xA0000;
+    size_t byte = y * 80 + x / 8;
+    size_t shift = 7 - x % 8;
+
+    io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_BIT_MASK);
+    io_out8(VGA_PORT_GRC_DATA, 1 << shift);
+
+    (void) vram[byte];
+    for (size_t i = 0; i < 4; ++i) {
+        uint8_t bit = 1 << i;
+        vga_mask_planes(bit);
+        vram[byte] = (color & bit) ? 0xFF : 0x00;
+    }
 }
 
 static int abs(int x) {
@@ -489,6 +504,24 @@ static void line(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) {
         if (e2 <= dx) {
             err += dx;
             y0 += sy;
+        }
+    }
+}
+
+// 00000000
+// 00001111
+// 00110011
+// 01010101
+
+static void debug_draw() {
+    for (size_t i = 0; i < 16; ++i) {
+        for (size_t j = 0; j < 16; ++j) {
+            for (size_t k = 0; k < 16; ++k) {
+                uint16_t x = j + (i % 8) * 16;
+                uint16_t y = k + (i / 8) * 16;
+
+                set_pixel_16_color(x, y, i);
+            }
         }
     }
 }
@@ -601,6 +634,7 @@ void vga_set_videomode(const vga_videomode* mode) {
     VGA_SETTINGS.width_chars = mode->horizontal_timings.active_area / h_div;
 
     draw_python();
+    debug_draw();
 }
 
 uint16_t vga_get_width_pixels() {

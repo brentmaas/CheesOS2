@@ -10,9 +10,18 @@
 #include "interrupt/pic.h"
 
 #include "driver/vga/videomode.h"
+#include "driver/vga/palette.h"
 
 void initialize_vga_new() {
     vga_set_videomode(&VGA_VIDEOMODE_640x480x16);
+    const vga_dac_color colors[] = {
+        {0, 0, 0}, {0, 0, 32}, {0, 32, 0}, {0, 32, 32},
+        {32, 0, 0}, {32, 0, 32}, {32, 32, 0}, {48, 48, 48},
+        {32, 32, 32}, {0, 0, 63}, {0, 63, 0}, {0, 63, 63},
+        {63, 0, 0}, {63, 0, 63}, {63, 63, 0}, {63, 63, 63},
+    };
+
+    vga_dac_write(0, 16, colors);
 }
 
 void kernel_main(multiboot_info* multiboot) {

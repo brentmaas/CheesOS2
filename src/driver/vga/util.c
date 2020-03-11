@@ -20,7 +20,7 @@ bool vga_enable_odd_even(bool enabled) {
 vga_plane_bits vga_mask_planes(vga_plane_bits planes) {
     io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_MAP_MASK);
     vga_seq_map_mask mask;
-    VGA_READ(VGA_PORT_SEQ_ADDR, &mask);
+    VGA_READ(VGA_PORT_SEQ_DATA, &mask);
 
     VGA_WRITE(VGA_PORT_SEQ_DATA, ((vga_seq_map_mask) {
         .planes = planes,

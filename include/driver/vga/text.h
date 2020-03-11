@@ -10,8 +10,11 @@
 // The GRC registers (set/reset, enable set/reset, data rotate, operation)
 // are assumed to be 0.
 
-#define VGA_FONT_ROWS 32
-#define VGA_FONT_GLYPHS 256
+#define VGA_FONT_ROWS (32)
+#define VGA_FONT_GLYPHS (256)
+
+#define VGA_ATTR_BLINK_BIT (0x80)
+#define VGA_ATTR_CHARSET_B_BIT (0x08)
 
 typedef uint8_t vga_glyph[VGA_FONT_ROWS];
 typedef vga_glyph vga_font[VGA_FONT_GLYPHS];
