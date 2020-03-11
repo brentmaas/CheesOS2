@@ -87,6 +87,8 @@ static volatile uint8_t* vga_memory_map_ptr(vga_memory_map map) {
         case VGA_MEMORY_MAP_B8000_32K:
             return (volatile uint8_t*) 0xB8000;
     }
+
+    __builtin_unreachable();
 }
 
 typedef struct __attribute__((packed)) {

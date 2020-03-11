@@ -12,7 +12,13 @@ ASMFLAGS += -felf32
 
 LDFLAGS += -T$(LINKER)/kernel.ld -ffreestanding -nostdlib -flto
 COMMON_FLAGS += -g -I$(INCLUDE) -I$(INCLUDE)/libc -ffreestanding -nostdlib
-CFLAGS += $(COMMON_FLAGS) -std=gnu11
+CFLAGS += $(COMMON_FLAGS) \
+	-std=gnu11 \
+	-Wall \
+	-Wextra \
+	-Wno-unused-function \
+	-Wno-unused-parameter \
+	-Wno-unused-const-variable
 
 QEMU ?= qemu-system-x86_64
 QEMU_COMMON_FLAGS += -no-reboot  -cpu 486 -kernel $(TARGET)

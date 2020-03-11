@@ -141,6 +141,8 @@ static intmax_t read_int_arg(va_list* args, enum format_length type) {
         case LENGTH_UMAX:
             return va_arg(*args, intmax_t);
     }
+
+    __builtin_unreachable();
 }
 
 static uintmax_t read_uint_arg(va_list* args, enum format_length type) {
@@ -158,6 +160,8 @@ static uintmax_t read_uint_arg(va_list* args, enum format_length type) {
         case LENGTH_UMAX:
             return va_arg(*args, uintmax_t);
     }
+
+    __builtin_unreachable();
 }
 
 size_t printf(const char* format, ...) {
