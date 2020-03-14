@@ -2,6 +2,7 @@
 #define _CHEESOS2_DRIVER_VGA_IO_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "core/io.h"
 
 #define VGA_PORT_GRC_ADDR 0x3CE
@@ -59,7 +60,7 @@
     } while(0)
 
 void vga_sync_atc();
-void vga_prepare_atc(uint8_t index);
+void vga_prepare_atc(uint8_t index, bool lock_palette);
 
 typedef struct {
     uint8_t grc;

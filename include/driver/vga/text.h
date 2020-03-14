@@ -29,7 +29,7 @@ typedef struct {
     bool enable_line_graphics;
 } vga_font_options;
 
-void vga_clear_text();
+void vga_clear_text(uint8_t clearchar, uint8_t clearattr);
 
 void vga_write_str(uint8_t col, uint8_t row, const char* ptr, uint8_t attr);
 void vga_write_char(uint8_t col, uint8_t row, uint8_t value, uint8_t attr);
@@ -37,7 +37,7 @@ void vga_write_char(uint8_t col, uint8_t row, uint8_t value, uint8_t attr);
 void vga_set_cursor(uint8_t col, uint8_t row);
 void vga_enable_cursor(bool enabled);
 
-void vga_upload_font(uint8_t charset, const vga_font* font);
+void vga_upload_font(uint8_t charset, const vga_font font);
 void vga_set_charsets(uint8_t charset_a, uint8_t charset_b);
 void vga_set_fontopts(const vga_font_options* fopts);
 

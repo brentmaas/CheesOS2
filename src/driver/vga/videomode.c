@@ -31,6 +31,16 @@ static struct {
     uint8_t width_chars;
 } VGA_SETTINGS = {};
 
+// In text modes, planes 0 and 1 are used in odd/even mode
+// Graphics modes use planar mode
+const vga_plane_bits DEFAULT_ENABLED_PLANES[] = {
+    [VGA_MODE_TEXT] = VGA_PLANE_0_BIT | VGA_PLANE_1_BIT,
+    [VGA_MODE_GRAPHICS_2_COLOR] = VGA_PLANE_0_BIT,
+    [VGA_MODE_GRAPHICS_4_COLOR] = VGA_PLANE_0_BIT | VGA_PLANE_1_BIT,
+    [VGA_MODE_GRAPHICS_16_COLOR] = VGA_PLANE_ALL,
+    [VGA_MODE_GRAPHICS_256_COLOR] = VGA_PLANE_ALL,
+};
+
 static void dump_registers() {
     printf("misc:\n    %02X\nsequencer:\n    ", io_in8(VGA_PORT_MISC_READ));
     for (size_t i = 0; i < VGA_NUM_SEQ_INDICES; ++i) {
@@ -85,9 +95,7 @@ static void unblank_and_lock() {
     v_retrace_end.protect = true;
     VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, v_retrace_end);
 
-    vga_atc_address lock_palette = {.lock_palette = true};
-    vga_sync_atc();
-    VGA_WRITE(VGA_PORT_ATC, lock_palette);
+    vga_prepare_atc(0, true);
 }
 
 static uint8_t pitch(const vga_videomode* vidmode, vga_mode mode, vga_address_mode address_mode) {
@@ -136,7 +144,6 @@ static void set_crtc_registers(const vga_videomode* vidmode, vga_mode mode) {
 
     // Set horizontal values
     {
-
         uint8_t h_display_end = vidmode->horizontal_timings.active_area / h_div - 1;
         uint8_t h_blanking_start = h_display_end + vidmode->horizontal_timings.overscan_back / h_div;
         uint8_t h_retrace_start = h_blanking_start + vidmode->horizontal_timings.blanking_back / h_div;
@@ -179,7 +186,7 @@ static void set_crtc_registers(const vga_videomode* vidmode, vga_mode mode) {
         // * v_display_end is the total number of scan lines in the active display
         // minus 1.
         // * v_blanking_start is 'the horizontal scan line count at which the "vertical
-        // blanking" signal becomes active minus 1.
+        // blanking" signal becomes active' minus 1.
         // * There is no explicit mention 1 should also be subtracted from v_retrace_start, however,
         // when this signal becomes active is otherwise similar described to the vertical blanking start
         // value in both FreeVGA and the IBM VGA manual, so 1 is subtracted.
@@ -360,12 +367,7 @@ static void set_seq_registers(const vga_videomode* vidmode, vga_mode mode) {
         .disable_display = false
     }));
 
-    // In text modes, planes 0 and 1 are used in odd/even mode
-    // Graphics modes use planar mode
-    vga_mask_planes(
-        VGA_PLANE_0_BIT | VGA_PLANE_1_BIT |
-            (mode == VGA_MODE_TEXT ? 0 : (VGA_PLANE_2_BIT | VGA_PLANE_3_BIT))
-    );
+    vga_mask_planes(DEFAULT_ENABLED_PLANES[mode]);
 
     io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_CHARACTER_MAP_SELECT);
     VGA_WRITE(VGA_IND_SEQ_CHARACTER_MAP_SELECT, (uint8_t) 0);
@@ -382,11 +384,11 @@ static void set_seq_registers(const vga_videomode* vidmode, vga_mode mode) {
 static void set_atc_registers(vga_mode mode) {
     // TODO: Allow more control
     for (uint8_t i = 0; i < 16; ++i) {
-        vga_prepare_atc(i);
+        vga_prepare_atc(i, false);
         VGA_WRITE(VGA_PORT_ATC, i);
     }
 
-    vga_prepare_atc(VGA_IND_ATC_MODE_CONTROL);
+    vga_prepare_atc(VGA_IND_ATC_MODE_CONTROL, false);
     VGA_WRITE(VGA_PORT_ATC, ((vga_atc_mode_control) {
         .enable_graphics = mode != VGA_MODE_TEXT,
         .enable_monochrome_emulation = false,
@@ -403,20 +405,20 @@ static void set_atc_registers(vga_mode mode) {
         .lock_palette = true
     }));
 
-    vga_prepare_atc(VGA_IND_ATC_OVERSCAN_COLOR);
+    vga_prepare_atc(VGA_IND_ATC_OVERSCAN_COLOR, false);
     VGA_WRITE(VGA_PORT_ATC, (uint8_t) 0);
 
-    vga_prepare_atc(VGA_IND_ATC_COLOR_PLANE_ENABLE);
+    vga_prepare_atc(VGA_IND_ATC_COLOR_PLANE_ENABLE, false);
     VGA_WRITE(VGA_PORT_ATC, ((vga_atc_color_plane_enable) {
-        .planes = VGA_PLANE_ALL
+        .planes = DEFAULT_ENABLED_PLANES[mode]
     }));
 
-    vga_prepare_atc(VGA_IND_ATC_HORIZ_PIXEL_PANNING);
+    vga_prepare_atc(VGA_IND_ATC_HORIZ_PIXEL_PANNING, false);
     VGA_WRITE(VGA_PORT_ATC, ((vga_atc_horiz_pixel_panning) {
         .pixel_shift = 0
     }));
 
-    vga_prepare_atc(VGA_IND_ATC_COLOR_SELECT);
+    vga_prepare_atc(VGA_IND_ATC_COLOR_SELECT, false);
     VGA_WRITE(VGA_PORT_ATC, ((vga_atc_color_select) {
         .color_select_5_4 = 0,
         .color_select_7_6 = 0
@@ -637,8 +639,8 @@ void vga_set_videomode(const vga_videomode* vidmode, vga_mode mode) {
     uint8_t h_div = vidmode->dot_mode == VGA_DOT_MODE_9_DPC ? 9 : 8;
     VGA_SETTINGS.width_chars = vidmode->horizontal_timings.active_area / h_div;
 
-    draw_python();
-    debug_draw();
+    // draw_python();
+    // debug_draw();
 }
 
 uint16_t vga_get_width_pixels() {

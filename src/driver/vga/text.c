@@ -21,45 +21,59 @@ static uint16_t charset_offset(uint8_t charset) {
     return charset * 0x4000;
 }
 
-void vga_clear_text() {
-    uint16_t buf_max = vga_get_width_chars() * vga_get_height_chars();
+static uint16_t pos_to_offset(uint8_t col, uint8_t row) {
+    return ((uint16_t) row * vga_get_width_chars() + col) * 2;
+}
 
-    for (size_t i = 0; i < buf_max; ++i) {
-        TEXT_VRAM[i] = 0;
+static uint16_t max_offset() {
+    return vga_get_width_chars() * vga_get_height_chars() * 2;
+}
+
+static bool pos_in_range(uint8_t col, uint8_t row) {
+    return col < vga_get_width_chars() && row < vga_get_height_chars();
+}
+
+void vga_clear_text(uint8_t clearchar, uint8_t clearattr) {
+    uint16_t buf_max = 2 * vga_get_width_chars() * vga_get_height_chars();
+
+    for (size_t i = 0; i < buf_max;) {
+        TEXT_VRAM[i++] = clearchar;
+        TEXT_VRAM[i++] = clearattr;
     }
 }
 
 void vga_write_str(uint8_t col, uint8_t row, const char* ptr, uint8_t attr) {
-    if (col >= vga_get_width_chars() || row >= vga_get_height_chars()) {
+    if (!pos_in_range(col, row)) {
         return;
     }
 
-    uint16_t offset = (uint16_t) col * vga_get_width_chars() + row;
-    uint16_t buf_max = vga_get_width_chars() * vga_get_height_chars();
+    uint16_t offset = pos_to_offset(col, row);
+    uint16_t buf_max = max_offset();
     while (offset < buf_max && *ptr) {
         TEXT_VRAM[offset++] = *ptr++;
+        TEXT_VRAM[offset++] = attr;
     }
 }
 
 void vga_write_char(uint8_t col, uint8_t row, uint8_t value, uint8_t attr) {
-    if (col >= vga_get_width_chars() || row >= vga_get_height_chars()) {
+    if (!pos_in_range(col, row)) {
         return;
     }
 
-    uint16_t offset = (uint16_t) col * vga_get_width_chars() + row;
-    TEXT_VRAM[offset * 2] = value;
-    TEXT_VRAM[offset * 2 + 1] = attr;
+    uint16_t offset = pos_to_offset(col, row);
+    TEXT_VRAM[offset] = value;
+    TEXT_VRAM[offset + 1] = attr;
 }
 
 void vga_set_cursor(uint8_t col, uint8_t row) {
-    if (col >= vga_get_width_chars() || row >= vga_get_height_chars()) {
+    if (!pos_in_range(col, row)) {
         return;
     }
 
-    uint16_t offset = (uint16_t) col * vga_get_width_chars() + row;
+    uint16_t offset = (uint16_t) row * (uint16_t) vga_get_width_chars() + col;
 
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_CURSOR_LOCATION_HIGH);
-    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, (uint8_t) (offset >> 16));
+    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, (uint8_t) (offset >> 8));
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_CURSOR_LOCATION_LOW);
     VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, (uint8_t) offset);
 }
@@ -72,7 +86,7 @@ void vga_enable_cursor(bool enabled) {
     VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, cursor_start);
 }
 
-void vga_upload_font(uint8_t charset, const vga_font* font) {
+void vga_upload_font(uint8_t charset, const vga_font font) {
     const vga_memory_map map = VGA_MEMORY_MAP_A0000_64K;
     volatile uint8_t* vram = vga_memory_map_ptr(map);
 
@@ -83,7 +97,7 @@ void vga_upload_font(uint8_t charset, const vga_font* font) {
     for (size_t i = 0; i < VGA_FONT_GLYPHS; ++i) {
         for (size_t j = 0; j < VGA_FONT_ROWS; ++j) {
             size_t k = i * VGA_FONT_ROWS + j + charset_offset(charset);
-            vram[k] = (*font)[i][j];
+            vram[k] = font[i][j];
         }
     }
 
@@ -103,7 +117,7 @@ void vga_set_charsets(uint8_t charset_a, uint8_t charset_b) {
 }
 
 void vga_set_fontopts(const vga_font_options* fopts) {
-    vga_prepare_atc(VGA_IND_ATC_MODE_CONTROL);
+    vga_prepare_atc(VGA_IND_ATC_MODE_CONTROL, true);
     vga_atc_mode_control atc_mode;
     VGA_READ(VGA_PORT_ATC, &atc_mode);
     atc_mode.enable_blink = fopts->enable_blink;
@@ -113,7 +127,7 @@ void vga_set_fontopts(const vga_font_options* fopts) {
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_MAXIMUM_SCAN_LINE);
     vga_crtc_maximum_scan_line crtc_max_scanline;
     VGA_READ(VGA_PORT_CRTC_COLOR_DATA, &crtc_max_scanline);
-    crtc_max_scanline.maximum_scan_line = fopts->text_height;
+    crtc_max_scanline.maximum_scan_line = fopts->text_height - 1;
     VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, crtc_max_scanline);
 
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_CURSOR_START);
@@ -124,7 +138,7 @@ void vga_set_fontopts(const vga_font_options* fopts) {
 
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_CURSOR_END);
     VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((vga_crtc_cursor_end) {
-        .cursor_scan_line_end = fopts->cursor.end,
+        .cursor_scan_line_end = fopts->cursor.end - 1,
         .cursor_skew = 0
     }));
 

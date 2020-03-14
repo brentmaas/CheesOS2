@@ -6,18 +6,14 @@
 
 void vga_set_palette(const vga_palette* palette) {
     for (uint8_t i = 0; i < VGA_PALETTE_SIZE; ++i) {
-        vga_prepare_atc(i);
+        vga_prepare_atc(i, false);
         VGA_WRITE(VGA_PORT_ATC, palette->palette_indices[i]);
     }
 
-    vga_prepare_atc(VGA_IND_ATC_OVERSCAN_COLOR);
+    vga_prepare_atc(VGA_IND_ATC_OVERSCAN_COLOR, false);
     VGA_WRITE(VGA_PORT_ATC, palette->overscan_index);
 
-    vga_sync_atc();
-    VGA_WRITE(VGA_PORT_ATC, ((vga_atc_address) {
-        .attribute_address = 0,
-        .lock_palette = true
-    }));
+    vga_prepare_atc(0, true);
 }
 
 void vga_dac_write_r3g3b2() {

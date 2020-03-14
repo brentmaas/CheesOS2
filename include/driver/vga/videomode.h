@@ -49,12 +49,10 @@ typedef struct {
 
 extern const vga_videomode VGA_VIDEOMODE_640x480;
 
-void vga_prepare_atc(uint8_t index);
 void vga_set_videomode(const vga_videomode* vidmode, vga_mode mode);
 
 uint16_t vga_get_width_pixels();
 uint16_t vga_get_height_pixels();
 uint8_t vga_get_width_chars();
-uint8_t vga_get_height_chars();
 
 #endif

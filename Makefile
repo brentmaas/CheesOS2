@@ -3,6 +3,7 @@ SRC := src
 INCLUDE := include
 LINKER := linker
 BUILD := build
+RES := res
 
 LD := i486-elf-gcc
 CC := i486-elf-gcc
@@ -11,7 +12,14 @@ ASM := nasm
 ASMFLAGS += -felf32
 
 LDFLAGS += -T$(LINKER)/kernel.ld -ffreestanding -nostdlib -flto
-COMMON_FLAGS += -g -I$(INCLUDE) -I$(INCLUDE)/libc -ffreestanding -nostdlib
+COMMON_FLAGS += \
+	-g \
+	-I$(INCLUDE) \
+	-I$(INCLUDE)/libc \
+	-I$(BUILD)/gen \
+	-ffreestanding \
+	-nostdlib
+
 CFLAGS += $(COMMON_FLAGS) \
 	-std=gnu11 \
 	-Wall \
@@ -26,18 +34,20 @@ QEMU_DEBUG_FLAGS += $(QEMU_COMMON_FLAGS) -gdb tcp::1234 -S -d int
 
 find = $(shell find $1 -type f -name $2 -print 2> /dev/null)
 
+FONTS = $(call find, $(RES)/fonts, "*.png")
+
 CSRCS = $(call find, $(SRC)/, "*.c")
-ASMSRCS = $(filter-out src/libc/ctri.asm src/libc/ctrn.asm,$(call find, $(SRC)/, "*.asm"))
-OBJECTS = $(CSRCS:%=$(BUILD)/objects/%.o) $(ASMSRCS:%=$(BUILD)/objects/%.o)
+ASMSRCS = $(filter-out $(SRC)/libc/crti.asm $(SRC)/libc/crtn.asm,$(call find, $(SRC)/, "*.asm"))
+OBJECTS = $(BUILD)/gen/res/fonts.o $(CSRCS:%=$(BUILD)/objects/%.o) $(ASMSRCS:%=$(BUILD)/objects/%.o)
 
 all: $(BUILD)/target/$(TARGET)
 
 $(BUILD)/target/$(TARGET): $(BUILD)/objects/src/libc/crti.asm.o $(OBJECTS) $(BUILD)/objects/src/libc/crtn.asm.o
 	@echo Linking $@
 	@mkdir -p $(BUILD)/target
-	@$(LD) -o $@ $^ $(LDFLAGS)
+	@$(LD) -o $@ $(BUILD)/objects/src/libc/crti.asm.o $(OBJECTS) $(BUILD)/objects/src/libc/crtn.asm.o $(LDFLAGS)
 
-$(BUILD)/objects/%.c.o: %.c
+$(BUILD)/objects/%.c.o: %.c $(BUILD)/gen/res/fonts.o
 	@echo Compiling $(subst $(BUILD)/,,$<)
 	@mkdir -p $(dir $@)
 	@$(CC) -MMD $(CFLAGS) -c -o $@ $<
@@ -46,6 +56,18 @@ $(BUILD)/objects/%.asm.o: %.asm
 	@echo Assembling $(subst $(BUILD)/,,$<)
 	@mkdir -p $(dir $@)
 	@$(ASM) -MD $@.d $(ASMFLAGS) -o $@ $<
+
+$(BUILD)/gen/res/fonts.o: $(FONTS)
+	@echo Generating fonts
+	@mkdir -p $(dir $@)
+	@python tools/createcharmap.py \
+		-C $(BUILD)/gen/res/fonts.c \
+		-H $(BUILD)/gen/res/fonts.h \
+		-I res/fonts.h \
+		$(FONTS)
+	@$(CC) $(CFLAGS) -c -o $(BUILD)/gen/res/fonts.o $(BUILD)/gen/res/fonts.c
+
+$(BUILD)/gen/res/fonts.h: $(BUILD)/gen/res/fonts.o
 
 clean:
 	@echo Cleaning build files
