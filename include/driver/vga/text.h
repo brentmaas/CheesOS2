@@ -10,11 +10,29 @@
 // The GRC registers (set/reset, enable set/reset, data rotate, operation)
 // are assumed to be 0.
 
+typedef enum {
+    VGA_ATTR_BLACK = 0,
+    VGA_ATTR_BLUE = 1,
+    VGA_ATTR_GREEN = 2,
+    VGA_ATTR_CYAN = 3,
+    VGA_ATTR_RED = 4,
+    VGA_ATTR_MAGENTA = 5,
+    VGA_ATTR_YELLOW = 6,
+    VGA_ATTR_GRAY = 7,
+
+    VGA_ATTR_LIGHT = 8,
+    VGA_ATTR_BLINK = 8,
+    VGA_ATTR_CHARSET_B = 8,
+
+    VGA_ATTR_WHITE = VGA_ATTR_GRAY | VGA_ATTR_LIGHT,
+} vga_attr;
+
+static uint8_t vga_make_attr(vga_attr fg, vga_attr bg) {
+    return fg | bg << 4;
+}
+
 #define VGA_FONT_ROWS (32)
 #define VGA_FONT_GLYPHS (256)
-
-#define VGA_ATTR_BLINK_BIT (0x80)
-#define VGA_ATTR_CHARSET_B_BIT (0x08)
 
 typedef uint8_t vga_glyph[VGA_FONT_ROWS];
 typedef vga_glyph vga_font[VGA_FONT_GLYPHS];

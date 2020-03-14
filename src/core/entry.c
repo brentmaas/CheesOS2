@@ -17,10 +17,23 @@
 void initialize_vga_new() {
     vga_set_videomode(&VGA_VIDEOMODE_640x480, VGA_MODE_TEXT);
     const vga_dac_color dos_colors[] = {
-        {0, 0, 0}, {0, 0, 32}, {0, 32, 0}, {0, 32, 32},
-        {32, 0, 0}, {32, 0, 32}, {32, 32, 0}, {48, 48, 48},
-        {32, 32, 32}, {0, 0, 63}, {0, 63, 0}, {0, 63, 63},
-        {63, 0, 0}, {63, 0, 63}, {63, 63, 0}, {63, 63, 63},
+        [VGA_ATTR_BLACK] = {0, 0, 0},
+        [VGA_ATTR_BLUE] = {0, 0, 32},
+        [VGA_ATTR_GREEN] = {0, 32, 0},
+        [VGA_ATTR_CYAN] = {0, 32, 32},
+        [VGA_ATTR_RED] = {32, 0, 0},
+        [VGA_ATTR_MAGENTA] = {32, 0, 32},
+        [VGA_ATTR_YELLOW] = {32, 32, 0},
+        [VGA_ATTR_GRAY] = {48, 48, 48},
+
+        [VGA_ATTR_LIGHT | VGA_ATTR_BLACK] = {32, 32, 32},
+        [VGA_ATTR_LIGHT | VGA_ATTR_BLUE] = {0, 0, 63},
+        [VGA_ATTR_LIGHT | VGA_ATTR_GREEN] = {0, 63, 0},
+        [VGA_ATTR_LIGHT | VGA_ATTR_CYAN] = {0, 63, 63},
+        [VGA_ATTR_LIGHT | VGA_ATTR_RED] = {63, 0, 0},
+        [VGA_ATTR_LIGHT | VGA_ATTR_MAGENTA] = {63, 0, 63},
+        [VGA_ATTR_LIGHT | VGA_ATTR_YELLOW] = {63, 63, 0},
+        [VGA_ATTR_WHITE] = {63, 63, 63}
     };
 
     vga_dac_write(0, 16, dos_colors);
@@ -73,11 +86,10 @@ void kernel_main(multiboot_info* multiboot) {
     vga_enable_cursor(true);
     vga_set_cursor(79, 29);
 
-    vga_write_str(0, 0, "OPPERPYTHON", 0x1F);
-    vga_write_str(0, 1, "IS", 0x2F);
-    vga_write_str(0, 2, "GOED", 0x4F);
-    vga_write_str(0, 3, "\x90\x91\x91\x91\x91\x91\x91\x91\x91\x92", 0x0F);
+    vga_write_str(0, 0, "OPPERPYTHON", vga_make_attr(VGA_ATTR_WHITE, VGA_ATTR_BLUE));
+    vga_write_str(0, 1, "IS", vga_make_attr(VGA_ATTR_WHITE, VGA_ATTR_GREEN));
+    vga_write_str(0, 2, "GOED", vga_make_attr(VGA_ATTR_WHITE, VGA_ATTR_RED));
+    vga_write_str(0, 3, "\x90\x91\x91\x91\x91\x91\x91\x91\x91\x92", vga_make_attr(VGA_ATTR_WHITE, VGA_ATTR_BLACK));
 
-    vga_write_str(0, 29, "oef", 0x0F);
-
+    vga_write_str(0, 29, "oef", vga_make_attr(VGA_ATTR_WHITE, VGA_ATTR_BLACK));
 }
