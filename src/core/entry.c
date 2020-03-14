@@ -76,5 +76,8 @@ void kernel_main(multiboot_info* multiboot) {
     vga_write_str(0, 0, "OPPERPYTHON", 0x1F);
     vga_write_str(0, 1, "IS", 0x2F);
     vga_write_str(0, 2, "GOED", 0x4F);
+    vga_write_str(0, 3, "\x90\x91\x91\x91\x91\x91\x91\x91\x91\x92", 0x0F);
+
     vga_write_str(0, 29, "oef", 0x0F);
+
 }
