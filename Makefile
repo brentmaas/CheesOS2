@@ -5,13 +5,13 @@ LINKER := linker
 BUILD := build
 RES := res
 
-LD := i486-elf-gcc
 CC := i486-elf-gcc
+LD := $(CC)
 
 ASM := nasm
 ASMFLAGS += -felf32
 
-LDFLAGS += -T$(LINKER)/kernel.ld -ffreestanding -nostdlib -flto
+LDFLAGS += -T $(LINKER)/kernel.ld -ffreestanding -nostdlib -flto
 COMMON_FLAGS += \
 	-g \
 	-I$(INCLUDE) \
@@ -29,7 +29,7 @@ CFLAGS += $(COMMON_FLAGS) \
 	-Wno-unused-const-variable
 
 QEMU ?= qemu-system-x86_64
-QEMU_COMMON_FLAGS += -no-reboot  -cpu 486 -kernel $(TARGET)
+QEMU_COMMON_FLAGS += -no-reboot -cpu 486
 QEMU_DEBUG_FLAGS += $(QEMU_COMMON_FLAGS) -gdb tcp::1234 -S -d int
 
 find = $(shell find $1 -type f -name $2 -print 2> /dev/null)

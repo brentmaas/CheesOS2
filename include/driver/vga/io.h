@@ -43,21 +43,29 @@
 
 #define VGA_READ(port, reg_ptr)                                 \
     do {                                                        \
-        _Static_assert(sizeof(uint8_t) == sizeof(*reg_ptr));    \
+        typedef typeof(*(reg_ptr)) _reg_type;                   \
+        _Static_assert(                                         \
+            sizeof(uint8_t) == sizeof(_reg_type),               \
+            "Attempt to read into structure of wrong size"      \
+        );                                                      \
         *(reg_ptr) = (union{                                    \
             uint8_t a;                                          \
-            typeof(*(reg_ptr)) b;                               \
+            _reg_type b;                                        \
         }){.a = io_in8(port)}.b;                                \
-    } while(0)
+    } while (0)
 
 #define VGA_WRITE(port, reg)                                    \
     do {                                                        \
-        _Static_assert(sizeof(uint8_t) == sizeof(reg));         \
-        io_out8(port, (union{                                   \
+        typedef typeof(reg) _reg_type;                          \
+        _Static_assert(                                         \
+            sizeof(uint8_t) == sizeof(_reg_type),               \
+            "Attempt to write into structure if wrong size"     \
+        );                                                      \
+        io_out8(port, (union {                                  \
             uint8_t a;                                          \
-            typeof(reg) b;                                      \
+            _reg_type b;                                        \
         }){.b = (reg)}.a);                                      \
-    } while(0)
+    } while (0)
 
 void vga_sync_atc();
 void vga_prepare_atc(uint8_t index, bool lock_palette);

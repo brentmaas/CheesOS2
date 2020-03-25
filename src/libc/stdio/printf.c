@@ -41,7 +41,7 @@ static size_t write_uint_buf(const struct format_options* opts, const char* buf,
 }
 
 static size_t format_uint(const struct format_options* opts, uintmax_t value) {
-    _Static_assert(sizeof(uintmax_t) == sizeof(uint64_t));
+    _Static_assert(sizeof(uintmax_t) == sizeof(uint64_t), "format_uint expects uintmax_t == uint64_t");
     char buf[UINTMAX_DIGITS] = {0};
     size_t digit = UINTMAX_DIGITS;
 
