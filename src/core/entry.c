@@ -14,6 +14,8 @@
 #include "driver/vga/text.h"
 #include "res/fonts.h"
 
+#include "driver/console/console.h"
+
 void initialize_vga_new() {
     vga_set_videomode(&VGA_VIDEOMODE_640x480, VGA_MODE_TEXT);
     const vga_dac_color dos_colors[] = {
@@ -89,7 +91,10 @@ void kernel_main(multiboot_info* multiboot) {
     vga_write_str(0, 0, "OPPERPYTHON", vga_make_attr(VGA_ATTR_WHITE, VGA_ATTR_BLUE));
     vga_write_str(0, 1, "IS", vga_make_attr(VGA_ATTR_WHITE, VGA_ATTR_GREEN));
     vga_write_str(0, 2, "GOED", vga_make_attr(VGA_ATTR_WHITE, VGA_ATTR_RED));
-    vga_write_str(0, 3, "\x90\x91\x91\x91\x91\x91\x91\x91\x91\x92", vga_make_attr(VGA_ATTR_WHITE, VGA_ATTR_BLACK));
+    vga_write_str(0, 3, "\x90\x91\x91\x91\x91\x91\x91\x91\x91\x92", vga_make_attr(VGA_ATTR_GREEN, VGA_ATTR_BLACK));
 
     vga_write_str(0, 29, "oef", vga_make_attr(VGA_ATTR_WHITE, VGA_ATTR_BLACK));
+    
+    console_init();
+    console_loop();
 }
