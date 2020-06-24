@@ -25,10 +25,11 @@ static void vga_write_char(char c, uint8_t color) {
     }
     if(c == '\n' || vga_column >= VGA_WIDTH) {
         vga_column = 0;
-        ++vga_row;
-
-        if(vga_row == VGA_HEIGHT) {
+        
+        if(vga_row == VGA_HEIGHT - 1) {
             vga_scroll(1);
+        }else{
+            ++vga_row;
         }
     }
     if(c != '\n') {

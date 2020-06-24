@@ -95,6 +95,5 @@ void kernel_main(multiboot_info* multiboot) {
 
     vga_write_str(0, 29, "oef", vga_make_attr(VGA_ATTR_WHITE, VGA_ATTR_BLACK));
     
-    console_init();
-    console_loop();
+    console();
 }
