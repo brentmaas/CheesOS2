@@ -11,7 +11,7 @@ size_t strlen(const char* str) {
 
 int strcmp(const char* lhs, const char* rhs){
 	size_t i = 0;
-	while(lhs[i] > 0 && lhs[i] == rhs[i]){
+	while(lhs[i] && lhs[i] == rhs[i]){
 		++i;
 	}
 	return (int) lhs[i] - (int) rhs[i];
