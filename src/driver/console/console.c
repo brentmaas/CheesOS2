@@ -18,7 +18,7 @@ void console(void){
 		size_t cursor = 0;
 		char last = '\0';
 		while(last != '\n'){
-			last = ps2_read_char_on_press();
+			last = ps2_read_char_on_release();
 			if(cursor < 100 && last){
 				if(last != '\n') input[cursor] = last;
 				++cursor;
