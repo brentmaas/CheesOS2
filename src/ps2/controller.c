@@ -2,8 +2,8 @@
 #include "ps2/device.h"
 #include "core/io.h"
 
-#define PS2_COMMAND_PORT (0x84)
-#define PS2_DATA_PORT (0x80)
+#define PS2_COMMAND_PORT (0x64)
+#define PS2_DATA_PORT (0x60)
 
 typedef enum {
     PS2_STATUS_OUTPUT = 0x1,
@@ -47,11 +47,11 @@ ps2_device_type ps2_port1_device = PS2_DEVICE_TYPE_DISABLED;
 ps2_device_type ps2_port2_device = PS2_DEVICE_TYPE_DISABLED;
 
 void ps2_controller_wait_output(void) {
-    while(io_in8(PS2_COMMAND_PORT) & PS2_STATUS_INPUT);
+    while(io_in8(PS2_COMMAND_PORT) & PS2_STATUS_INPUT); //Input buffer status bit must be 0
 }
 
 void ps2_controller_wait_input(void) {
-    while(io_in8(PS2_COMMAND_PORT) & PS2_STATUS_OUTPUT);
+    while(!(io_in8(PS2_COMMAND_PORT) & PS2_STATUS_OUTPUT)); //Output buffer status bit must be 1
 }
 
 void ps2_clear_output(void) {

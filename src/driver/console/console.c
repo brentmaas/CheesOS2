@@ -2,21 +2,29 @@
 #include "vga/vga.h"
 #include "stdio.h"
 #include "string.h"
+#include "ps2/scancode.h"
 
-int is_command(const char* input, const char* command){
+int is_command(char* input, const char* command){
 	size_t len = strlen(command);
 	return strncmp(input, command, strlen(command)) == 0 && (input[len] == ' ' || input[len] == '\0');
 }
 
 void console(void){
-	vga_print("\nCheeSH v0.0\nSucces met een console gebruiken zonder toetsinvoer lmao");
+	vga_print("\nCheeSH v0.1\nKan niet wachten tot m'n shitcode gepurged wordt");
 	while(1){
 		vga_print("\n> ");
 		
-		//Totdat er invoerinterrupts zijn
-		const char* input = "oef";
-		vga_print(input);
-		vga_print("\n");
+		char input[100] = {'\0'};
+		size_t cursor = 0;
+		char last = '\0';
+		while(last != '\n'){
+			last = ps2_read_char_on_press();
+			if(cursor < 100 && last){
+				if(last != '\n') input[cursor] = last;
+				++cursor;
+				vga_putchar(last);
+			}
+		}
 		
 		if(is_command(input, "exit")){
 			vga_print("Exiting CheeSH...");

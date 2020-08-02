@@ -16,6 +16,8 @@
 
 #include "driver/console/console.h"
 
+#include "ps2/controller.h"
+
 void initialize_vga_new() {
     vga_set_videomode(&VGA_VIDEOMODE_640x480, VGA_MODE_TEXT);
     const vga_dac_color dos_colors[] = {
@@ -72,7 +74,12 @@ void kernel_main(multiboot_info* multiboot) {
         vga_print(multiboot->cmdline);
         vga_print("\n");
     }
-
+	
+	if(ps2_controller_init()){
+		vga_print("PS2 initialisation failed");
+		return;
+	}
+	
     vga_print("OPPERPYTHON\n");
     vga_color(VGA_COLOR_GREEN, VGA_COLOR_RED);
     vga_print("IS\n");
