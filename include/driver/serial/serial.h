@@ -50,15 +50,15 @@
 #define SERIAL_REG_MODEM_STATUS (6)
 #define SERIAL_REG_SCRATCHPAD (7)
 
-typedef struct __attribute__((packed)) {
+struct __attribute__((packed)) serial_reg_enable_int {
     uint8_t enable_data_available_int : 1;
     uint8_t enable_tx_holding_empty_int : 1;
     uint8_t enable_line_status_int : 1;
     uint8_t enable_modem_status_int : 1;
     uint8_t : 4;
-} serial_reg_enable_int;
+};
 
-typedef enum {
+enum serial_int_type {
     SERIAL_INT_TYPE_MODEM_STATUS = 0x0,
     // Transmitter holding register is empty, indicating a byte can be written again.
     SERIAL_INT_TYPE_TX_HOLDING_EMPTY = 0x1,
@@ -66,64 +66,64 @@ typedef enum {
     SERIAL_INT_TYPE_DATA_AVAILABLE = 0x2,
     // Overrun, parity or framing error, or break interrupt.
     SERIAL_INT_TYPE_LINE_STATUS = 0x3
-} serial_int_type;
+};
 
-typedef struct __attribute__((packed)) {
+struct __attribute__((packed)) serial_reg_int_ident {
     // set 0 when an interrupt is pending.
     uint8_t no_int_pending : 1;
-    serial_int_type highest_pending : 2;
+    enum serial_int_type highest_pending : 2;
     // set to 1 (along with SERIAL_INT_TYPE_DATA_AVAILABLE) when a
     // timeout interrupt is pending in fifo mode.
     uint8_t fifo_timeout_pending : 1;
     uint8_t : 2;
     // Set to 0x11 when fifo is enabled.
     uint8_t fifo_enabled : 2;
-} serial_reg_int_ident;
+};
 
-typedef enum {
+enum serial_trigger_level {
     SERIAL_TRIGGER_LEVEL_1_BYTE = 0x0,
     SERIAL_TRIGGER_LEVEL_4_BYTES = 0x1,
     SERIAL_TRIGGER_LEVEL_8_BYTES = 0x2,
     SERIAL_TRIGGER_LEVEL_14_BYTES = 0x3
-} serial_trigger_level;
+};
 
-typedef struct __attribute__((packed)) {
+struct __attribute__((packed)) serial_reg_fifo_control {
     uint8_t fifo_enable : 1;
     uint8_t clear_rx_buffer : 1;
     uint8_t clear_tx_buffer : 1;
     uint8_t : 3;
-    serial_trigger_level trigger_level : 2;
-} serial_reg_fifo_control;
+    enum serial_trigger_level trigger_level : 2;
+};
 
-typedef enum {
+enum serial_data_size {
     SERIAL_DATA_SIZE_5_BITS = 0,
     SERIAL_DATA_SIZE_6_BITS = 1,
     SERIAL_DATA_SIZE_7_BITS = 2,
     SERIAL_DATA_SIZE_8_BITS = 3
-} serial_data_size;
+};
 
-typedef enum {
+enum serial_stop_bits {
     SERIAL_STOP_BITS_ONE = 0,
     SERIAL_STOP_BITS_TWO = 1
-} serial_stop_bits;
+};
 
-typedef enum {
+enum serial_parity {
     SERIAL_PARITY_NONE = 0x0,
     SERIAL_PARITY_ODD = 0x1,
     SERIAL_PARITY_EVEN = 0x3,
     SERIAL_PARITY_MARK = 0x5,
     SERIAL_PARITY_SPACE = 0x7,
-} serial_parity;
+};
 
-typedef struct __attribute__((packed)) {
-    serial_data_size data_size : 2;
-    serial_stop_bits stop_bits : 1;
-    serial_parity parity : 3;
+struct __attribute__((packed)) serial_reg_line_control {
+    enum serial_data_size data_size : 2;
+    enum serial_stop_bits stop_bits : 1;
+    enum serial_parity parity : 3;
     uint8_t enable_break : 1;
     uint8_t divisor_latch_access : 1;
-} serial_reg_line_control;
+};
 
-typedef struct __attribute__((packed)) {
+struct __attribute__((packed)) serial_reg_line_status {
     uint8_t data_available : 1;
     uint8_t overrun_error : 1;
     uint8_t parity_error : 1;
@@ -133,22 +133,22 @@ typedef struct __attribute__((packed)) {
     uint8_t tx_empty : 1;
     // Set when a parity or framing error, or break interrupt is in the fifo buffer
     uint8_t error_in_fifo : 1;
-} serial_reg_line_status;
+};
 
 #define SERIAL_MAX_BAUDRATE (115200)
 
 #define SERIAL_BAUDRATE_DIVISOR(desired_baudrate) (SERIAL_MAX_BAUDRATE / (desired_baudrate))
 
-typedef struct {
-    serial_data_size data_size;
-    serial_stop_bits stop_bits;
-    serial_parity parity;
+struct serial_init_info {
+    enum serial_data_size data_size;
+    enum serial_stop_bits stop_bits;
+    enum serial_parity parity;
     bool enable_break;
     uint16_t baudrate_divisor;
-} serial_init_info;
+};
 
 // Initialize the serial port. This disables serial interrupts for this port.
-void serial_init(uint16_t port, serial_init_info init_info);
+void serial_init(uint16_t port, struct serial_init_info init_info);
 void serial_set_baudrate_divisor(uint16_t port, uint16_t divisor);
 bool serial_data_available(uint16_t port);
 bool serial_tx_ready(uint16_t port);

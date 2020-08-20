@@ -104,7 +104,7 @@ void kernel_main(multiboot_info* multiboot) {
     vga_write_str(0, 29, "oef", vga_make_attr(VGA_ATTR_WHITE, VGA_ATTR_BLACK));
 
     vga_print("Initializing serial\n");
-    serial_init(SERIAL_PORT_1, ((serial_init_info) {
+    serial_init(SERIAL_PORT_1, ((struct serial_init_info) {
         .data_size = SERIAL_DATA_SIZE_8_BITS,
         .stop_bits = SERIAL_STOP_BITS_ONE,
         .parity = SERIAL_PARITY_NONE,
