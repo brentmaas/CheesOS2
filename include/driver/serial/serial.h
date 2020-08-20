@@ -2,6 +2,7 @@
 #define _CHEESOS2_DRIVER_SERIAL_SERIAL_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 // Default serial ports. According to https://wiki.osdev.org/Serial_Ports,
 // these two port addresses are relatively safe to use, but the other two
@@ -53,7 +54,7 @@ typedef struct __attribute__((packed)) {
     uint8_t enable_data_available_int : 1;
     uint8_t enable_tx_holding_empty_int : 1;
     uint8_t enable_line_status_int : 1;
-    uint8_t enable_model_status_int : 1;
+    uint8_t enable_modem_status_int : 1;
     uint8_t : 4;
 } serial_reg_enable_int;
 
@@ -106,12 +107,18 @@ typedef enum {
     SERIAL_STOP_BITS_TWO = 1
 } serial_stop_bits;
 
+typedef enum {
+    SERIAL_PARITY_NONE = 0x0,
+    SERIAL_PARITY_ODD = 0x1,
+    SERIAL_PARITY_EVEN = 0x3,
+    SERIAL_PARITY_MARK = 0x5,
+    SERIAL_PARITY_SPACE = 0x7,
+} serial_parity;
+
 typedef struct __attribute__((packed)) {
     serial_data_size data_size : 2;
     serial_stop_bits stop_bits : 1;
-    uint8_t enable_parity : 1;
-    uint8_t enable_even_odd_parity : 1;
-    uint8_t enable_stick_parity : 1;
+    serial_parity parity : 3;
     uint8_t enable_break : 1;
     uint8_t divisor_latch_access : 1;
 } serial_reg_line_control;
@@ -127,5 +134,25 @@ typedef struct __attribute__((packed)) {
     // Set when a parity or framing error, or break interrupt is in the fifo buffer
     uint8_t error_in_fifo : 1;
 } serial_reg_line_status;
+
+#define SERIAL_MAX_BAUDRATE (115200)
+
+#define SERIAL_BAUDRATE_DIVISOR(desired_baudrate) (SERIAL_MAX_BAUDRATE / (desired_baudrate))
+
+typedef struct {
+    serial_data_size data_size;
+    serial_stop_bits stop_bits;
+    serial_parity parity;
+    bool enable_break;
+    uint16_t baudrate_divisor;
+} serial_init_info;
+
+// Initialize the serial port. This disables serial interrupts for this port.
+void serial_init(uint16_t port, serial_init_info init_info);
+void serial_set_baudrate_divisor(uint16_t port, uint16_t divisor);
+bool serial_data_available(uint16_t port);
+bool serial_tx_ready(uint16_t port);
+uint8_t serial_busy_read(uint16_t port);
+void serial_busy_write(uint16_t port, uint8_t data);
 
 #endif

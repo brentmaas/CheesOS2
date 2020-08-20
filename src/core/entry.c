@@ -15,6 +15,7 @@
 #include "res/fonts.h"
 
 #include "driver/console/console.h"
+#include "driver/serial/serial.h"
 
 #include "ps2/controller.h"
 
@@ -74,12 +75,12 @@ void kernel_main(multiboot_info* multiboot) {
         vga_print(multiboot->cmdline);
         vga_print("\n");
     }
-	
+
 	if(ps2_controller_init()){
 		vga_print("PS2 initialisation failed");
 		return;
 	}
-	
+
     vga_print("OPPERPYTHON\n");
     vga_color(VGA_COLOR_GREEN, VGA_COLOR_RED);
     vga_print("IS\n");
@@ -101,6 +102,23 @@ void kernel_main(multiboot_info* multiboot) {
     vga_write_str(0, 3, "\x90\x91\x91\x91\x91\x91\x91\x91\x91\x92", vga_make_attr(VGA_ATTR_GREEN, VGA_ATTR_BLACK));
 
     vga_write_str(0, 29, "oef", vga_make_attr(VGA_ATTR_WHITE, VGA_ATTR_BLACK));
-    
+
+    vga_print("Initializing serial\n");
+    serial_init(SERIAL_PORT_1, ((serial_init_info) {
+        .data_size = SERIAL_DATA_SIZE_8_BITS,
+        .stop_bits = SERIAL_STOP_BITS_ONE,
+        .parity = SERIAL_PARITY_NONE,
+        .enable_break = false,
+        .baudrate_divisor = SERIAL_BAUDRATE_DIVISOR(9600)
+    }));
+
+    {
+        const char* msg = "De Opperpython groet u via CheesOS serial\n";
+        while (*msg != 0) {
+            serial_busy_write(SERIAL_PORT_1, *msg);
+            ++msg;
+        }
+    }
+
     console();
 }

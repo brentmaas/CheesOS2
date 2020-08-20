@@ -19,6 +19,5 @@ IO_MAKE_ROUTINE(16, uint16_t) // io_in16(port), io_out16(port, value)
 IO_MAKE_ROUTINE(32, uint32_t) // io_in32(port), io_out32(port, value)
 
 #undef IO_MAKE_ROUTINE
-#undef IO_INTEL_ASM
 
 #endif
