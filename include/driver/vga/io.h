@@ -3,7 +3,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+
 #include "core/io.h"
+#include "utility/bitcast.h"
 
 #define VGA_PORT_GRC_ADDR 0x3CE
 #define VGA_PORT_GRC_DATA 0x3CF
@@ -44,28 +46,10 @@
 #define VGA_READ(port, reg_ptr)                                 \
     do {                                                        \
         typedef typeof(*(reg_ptr)) _reg_type;                   \
-        _Static_assert(                                         \
-            sizeof(uint8_t) == sizeof(_reg_type),               \
-            "Attempt to read into structure of wrong size"      \
-        );                                                      \
-        *(reg_ptr) = (union{                                    \
-            uint8_t a;                                          \
-            _reg_type b;                                        \
-        }){.a = io_in8(port)}.b;                                \
+        *(reg_ptr) = BITCAST(_reg_type, io_in8(port));          \
     } while (0)
 
-#define VGA_WRITE(port, reg)                                    \
-    do {                                                        \
-        typedef typeof(reg) _reg_type;                          \
-        _Static_assert(                                         \
-            sizeof(uint8_t) == sizeof(_reg_type),               \
-            "Attempt to write into structure if wrong size"     \
-        );                                                      \
-        io_out8(port, (union {                                  \
-            uint8_t a;                                          \
-            _reg_type b;                                        \
-        }){.b = (reg)}.a);                                      \
-    } while (0)
+#define VGA_WRITE(port, reg) io_out8(port, BITCAST(uint8_t, reg))
 
 void vga_sync_atc();
 void vga_prepare_atc(uint8_t index, bool lock_palette);
