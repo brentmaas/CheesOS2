@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "vga/vga.h"
 #include "memory/gdt.h"
 #include "interrupt/idt.h"
 #include "core/multiboot.h"
@@ -13,14 +12,13 @@
 #include "driver/vga/text.h"
 #include "res/fonts.h"
 
-#include "driver/console/console.h"
 #include "driver/serial/serial.h"
 
 #include "ps2/controller.h"
 
 #include "debug/log.h"
-#include "debug/memdump.h"
 #include "debug/console/console.h"
+#include "debug/console/shell.h"
 
 static int sink_serial_cprintf_cbk(void* context, const char* data, size_t size) {
     for (size_t i = 0; i < size; ++i) {
@@ -84,4 +82,6 @@ void kernel_main(const struct multiboot_info* multiboot) {
     console_set_attr(VGA_ATTR_GREEN, VGA_ATTR_BLACK);
     console_print("\x90\x91\x91\x91\x91\x91\x91\x91\x91\x92\n");
     console_set_attr(VGA_ATTR_WHITE, VGA_ATTR_BLACK);
+
+    console_shell_loop();
 }

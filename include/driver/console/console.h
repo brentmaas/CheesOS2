@@ -1,6 +1,0 @@
-#ifndef _CHEESOS2_DRIVER_CONSOLE_CONSOLE_H
-#define _CHEESOS2_DRIVER_CONSOLE_CONSOLE_H
-
-void console(void);
-
-#endif
