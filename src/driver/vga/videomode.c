@@ -2,7 +2,7 @@
 #include "driver/vga/io.h"
 #include "driver/vga/util.h"
 #include "core/io.h"
-#include <stdio.h>
+#include "vga/vga.h"
 
 const struct vga_videomode VGA_VIDEOMODE_640x480 = {
     .horizontal_timings = {
@@ -42,35 +42,35 @@ const enum vga_plane_bits DEFAULT_ENABLED_PLANES[] = {
 };
 
 static void dump_registers() {
-    printf("misc:\n    %02X\nsequencer:\n    ", io_in8(VGA_PORT_MISC_READ));
+    vga_printf("misc:\n    %02X\nsequencer:\n    ", io_in8(VGA_PORT_MISC_READ));
     for (size_t i = 0; i < VGA_NUM_SEQ_INDICES; ++i) {
         io_out8(VGA_PORT_SEQ_ADDR, i);
-        printf("%02X ", io_in8(VGA_PORT_SEQ_DATA));
+        vga_printf("%02X ", io_in8(VGA_PORT_SEQ_DATA));
     }
 
-    printf("\ncrtc:");
+    vga_print("\ncrtc:");
     for (size_t i = 0; i < VGA_NUM_CRTC_INDICES; ++i) {
-        if (i % 8 == 0) printf("\n    ");
+        if (i % 8 == 0) vga_printf("\n    ");
         io_out8(VGA_PORT_CRTC_COLOR_ADDR, i);
-        printf("%02X ", io_in8(VGA_PORT_CRTC_COLOR_DATA));
+        vga_printf("%02X ", io_in8(VGA_PORT_CRTC_COLOR_DATA));
     }
 
-    printf("\ngraphics:");
+    vga_print("\ngraphics:");
     for (size_t i = 0; i < VGA_NUM_GRC_INDICES; ++i) {
-        if (i % 8 == 0) printf("\n    ");
+        if (i % 8 == 0) vga_printf("\n    ");
         io_out8(VGA_PORT_GRC_ADDR, i);
-        printf("%02X ", io_in8(VGA_PORT_GRC_DATA));
+        vga_printf("%02X ", io_in8(VGA_PORT_GRC_DATA));
     }
 
-    printf("\natc:");
+    vga_print("\natc:");
     for (size_t i = 0; i < VGA_NUM_ATC_INDICES; ++i) {
-        if (i % 8 == 0) printf("\n    ");
+        if (i % 8 == 0) vga_print("\n    ");
         vga_sync_atc();
         VGA_WRITE(VGA_PORT_ATC, ((struct vga_atc_address) {
             .attribute_address = i,
             .lock_palette = true
         }));
-        printf("%02X ", io_in8(VGA_PORT_ATC_READ));
+        vga_printf("%02X ", io_in8(VGA_PORT_ATC_READ));
     }
 }
 

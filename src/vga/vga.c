@@ -1,6 +1,8 @@
 #include "vga/vga.h"
+#include "utility/cprintf.h"
 
 #include <string.h>
+#include <stdarg.h>
 
 #define TAB_SIZE (4u)
 
@@ -66,6 +68,18 @@ void vga_write(const char* str, size_t size) {
 
 void vga_print(const char* str) {
     vga_write(str, strlen(str));
+}
+
+static int vga_cprintf_cbk(void* ctx, const char* data, size_t size) {
+    vga_write(data, size);
+    return 0;
+}
+
+void vga_printf(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    vcprintf(&vga_cprintf_cbk, NULL, format, args);
+    va_end(args);
 }
 
 void vga_scroll(size_t rows) {

@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <stddef.h>
-#include <stdio.h>
 
 #include "vga/vga.h"
 #include "memory/gdt.h"

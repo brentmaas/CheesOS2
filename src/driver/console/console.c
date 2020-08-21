@@ -1,8 +1,8 @@
 #include "driver/console/console.h"
 #include "vga/vga.h"
-#include "stdio.h"
-#include "string.h"
 #include "ps2/scancode.h"
+
+#include <string.h>
 
 int is_command(char* input, const char* command){
 	size_t len = strlen(command);
@@ -13,7 +13,7 @@ void console(void){
 	vga_print("\nCheeSH v0.1\nKan niet wachten tot m'n shitcode gepurged wordt");
 	while(1){
 		vga_print("\n> ");
-		
+
 		char input[100] = {'\0'};
 		size_t cursor = 0;
 		char last = '\0';
@@ -25,7 +25,7 @@ void console(void){
 				vga_putchar(last);
 			}
 		}
-		
+
 		if(is_command(input, "exit")){
 			vga_print("Exiting CheeSH...");
 			return;

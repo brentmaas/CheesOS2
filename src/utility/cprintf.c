@@ -1,10 +1,9 @@
-#include <stdio.h>
+#include "utility/cprintf.h"
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-
-#include "vga/vga.h"
 
 #define UINTMAX_DIGITS 20 // log10(uintmax_t) == 20 digits
 #define UINTMAX_NIBBLES (sizeof(uintmax_t) * 2)
@@ -29,7 +28,7 @@ struct format_options {
     char conversion_specifier;
 };
 
-static int write_uint_buf(print_cbk cbk, void* ctx, const struct format_options* opts, const char* buf, size_t len) {
+static int write_uint_buf(cprintf_write_cbk cbk, void* ctx, const struct format_options* opts, const char* buf, size_t len) {
     char leading = opts->flags.leading_zeros ? '0' : ' ';
     for (size_t i = len; i < opts->min_width; ++i) {
         int result = cbk(ctx, &leading, 1);
@@ -41,7 +40,7 @@ static int write_uint_buf(print_cbk cbk, void* ctx, const struct format_options*
     return cbk(ctx, buf, len);
 }
 
-static int format_uint(print_cbk cbk, void* ctx, const struct format_options* opts, uintmax_t value) {
+static int format_uint(cprintf_write_cbk cbk, void* ctx, const struct format_options* opts, uintmax_t value) {
     _Static_assert(sizeof(uintmax_t) == sizeof(uint64_t), "format_uint expects uintmax_t == uint64_t");
     char buf[UINTMAX_DIGITS] = {0};
     size_t digit = UINTMAX_DIGITS;
@@ -55,8 +54,9 @@ static int format_uint(print_cbk cbk, void* ctx, const struct format_options* op
     return write_uint_buf(cbk, ctx, opts, &buf[digit], UINTMAX_DIGITS - digit);
 }
 
-static int format_hex(print_cbk cbk, void* ctx, const struct format_options* opts, uintmax_t value, bool upper) {
+static int format_hex(cprintf_write_cbk cbk, void* ctx, const struct format_options* opts, uintmax_t value) {
     char buf[UINTMAX_NIBBLES] = {0};
+    bool upper = opts->conversion_specifier == 'X';
     char letter_base = (upper ? 'A' : 'a') - 10;
 
     size_t digit = UINTMAX_NIBBLES;
@@ -165,14 +165,14 @@ static uintmax_t read_uint_arg(va_list* args, enum format_length type) {
     __builtin_unreachable();
 }
 
-int vcprintf(print_cbk cbk, void* context, const char* format, va_list args) {
-    // size_t printed = 0;
-
+int vcprintf(cprintf_write_cbk cbk, void* context, const char* format, va_list args) {
     while (*format) {
         const char c = *format++;
         if (c != '%') {
-            vga_putchar(c);
-            // ++printed;
+            int result = cbk(context, &c, 1);
+            if (result) {
+                return result;
+            }
             continue;
         }
 
@@ -211,13 +211,23 @@ int vcprintf(print_cbk cbk, void* context, const char* format, va_list args) {
                 }
                 break;
             }
-            case 'u':
-                // printed += format_uint(&opts, read_uint_arg(&args, opts.length_modifier));
+            case 'u': {
+                uintmax_t value = read_uint_arg(&args, opts.length_modifier);
+                int result = format_uint(cbk, context, &opts, value);
+                if (result) {
+                    return result;
+                }
                 break;
+            }
             case 'x':
-            case 'X':
-                // printed += format_hex(&opts, read_uint_arg(&args, opts.length_modifier), opts.conversion_specifier == 'X');
+            case 'X': {
+                uintmax_t value = read_uint_arg(&args, opts.length_modifier);
+                int result = format_hex(cbk, context, &opts, value);
+                if (result) {
+                    return result;
+                }
                 break;
+            }
             case 'p': {
                 void* ptr = va_arg(args, void*);
                 int result = cbk(context, "0x", 2);
@@ -226,7 +236,8 @@ int vcprintf(print_cbk cbk, void* context, const char* format, va_list args) {
                 }
                 opts.min_width = sizeof(intptr_t) * 2;
                 opts.flags.leading_zeros = true;
-                result = format_hex(cbk, context, &opts, (uintptr_t) ptr, true);
+                opts.conversion_specifier = 'X';
+                result = format_hex(cbk, context, &opts, (uintptr_t) ptr);
                 if (result) {
                     return result;
                 }
@@ -258,29 +269,17 @@ int vcprintf(print_cbk cbk, void* context, const char* format, va_list args) {
                 break;
             }
             default:
-                return 1; // TODO: Better error mechanism
+                return FORMAT_ERR_INVALID_SPECIFIER;
         }
     }
 
     return 0;
 }
 
-int cprintf(print_cbk cbk, void* context, const char* format, ...) {
+int cprintf(cprintf_write_cbk cbk, void* context, const char* format, ...) {
     va_list args;
     va_start(args, format);
     int result = vcprintf(cbk, context, format, args);
     va_end(args);
     return result;
-}
-
-static int vga_print_callback(void* context, const char* data, size_t size) {
-    vga_write(data, size);
-    return 0;
-}
-
-void printf(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    vcprintf(&vga_print_callback, NULL, format, args);
-    va_end(args);
 }

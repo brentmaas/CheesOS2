@@ -1,8 +1,6 @@
 #include "ps2/scancode.h"
 #include "ps2/controller.h"
 
-#include <stdio.h>
-
 //Zie https://wiki.osdev.org/PS/2_Keyboard, hele 0xe0 rommel moet ook ooit nog (tm)
 //Voel je vrij betere namen te geven als je wilt
 enum ps2_scancode2 {

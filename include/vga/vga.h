@@ -31,6 +31,7 @@ void vga_color(enum vga_color_type, enum vga_color_type);
 void vga_putchar(char c);
 void vga_write(const char*, size_t);
 void vga_print(const char*);
+void vga_printf(const char*, ...);
 void vga_scroll(size_t);
 
 #endif

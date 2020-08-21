@@ -1,9 +1,5 @@
 #include "interrupt/idt.h"
-#include "vga/vga.h"
-#include "debug/memdump.h"
 #include "interrupt/exceptions.h"
-
-#include <stdio.h>
 
 static struct idt_descriptor descriptor;
 static struct idt_entry entries[256];
