@@ -29,7 +29,7 @@ const char* INTERRUPT_NAMES[] = {
     "Virtualization Exception"
 };
 
-void idt_exception_dump_registers(interrupt_registers* registers, interrupt_parameters* parameters) {
+void idt_exception_dump_registers(struct interrupt_registers* registers, struct interrupt_parameters* parameters) {
     printf("EAX = 0x%08x\tECX = 0x%08x\n"
         "EDX = 0x%08x\tEBX = 0x%08x\n"
         "ESP = 0x%08x\tEBP = 0x%08x\n"
@@ -46,13 +46,13 @@ void idt_exception_dump_registers(interrupt_registers* registers, interrupt_para
     );
 }
 
-void idt_exception_no_status(uint32_t interrupt, interrupt_registers* registers, interrupt_parameters* parameters) {
+void idt_exception_no_status(uint32_t interrupt, struct interrupt_registers* registers, struct interrupt_parameters* parameters) {
     printf("Hardware exception %u (%s)\n", interrupt, INTERRUPT_NAMES[interrupt]);
     idt_exception_dump_registers(registers, parameters);
     kernel_panic();
 }
 
-void idt_exception_status(uint32_t interrupt, interrupt_registers* registers, interrupt_parameters* parameters, uint32_t status) {
+void idt_exception_status(uint32_t interrupt, struct interrupt_registers* registers, struct interrupt_parameters* parameters, uint32_t status) {
     printf("Hardware exception %u (%s); status = %u\n", interrupt, INTERRUPT_NAMES[interrupt], status);
     idt_exception_dump_registers(registers, parameters);
     kernel_panic();

@@ -1,12 +1,12 @@
 #ifndef _CHEESOS2_PS2_DEVICE_H
 #define _CHEESOS2_PS2_DEVICE_H
 
-typedef enum {
+enum ps2_device_id {
     PS2_DEVICE_FIRST,
     PS2_DEVICE_SECOND
-} ps2_device_id;
+};
 
-typedef enum {
+enum ps2_device_type {
     PS2_DEVICE_TYPE_DISABLED,
     PS2_DEVICE_TYPE_AT_KEYBOARD,
     PS2_DEVICE_TYPE_MOUSE,
@@ -14,8 +14,8 @@ typedef enum {
     PS2_DEVICE_TYPE_MOUSE_5_BUTTON,
     PS2_DEVICE_TYPE_MF2_KEYBOARD_TRANSLATION,
     PS2_DEVICE_TYPE_MF2_KEYBOARD
-} ps2_device_type;
+};
 
-ps2_device_type ps2_device_identify(ps2_device_id);
+enum ps2_device_type ps2_device_identify(enum ps2_device_id);
 
 #endif

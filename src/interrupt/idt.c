@@ -5,8 +5,8 @@
 
 #include <stdio.h>
 
-static idt_descriptor descriptor;
-static idt_entry entries[256];
+static struct idt_descriptor descriptor;
+static struct idt_entry entries[256];
 
 void* idt_callback_routines[256];
 
@@ -15,7 +15,7 @@ void* idt_hardware_callbacks[256];
 extern void idt_create_handler_table(void* table);
 extern void idt_load(void* descriptor);
 
-void idt_set_entry(idt_entry* entry, uint32_t offset, uint16_t selector, idt_gate_type gate_type, idt_flag_type flags) {
+void idt_set_entry(struct idt_entry* entry, uint32_t offset, uint16_t selector, enum idt_gate_type gate_type, enum idt_flag_type flags) {
     entry->offset_low = offset & 0xFFFFu;
     entry->offset_high = (offset & 0xFFFF0000u) >> 16u;
 
@@ -26,17 +26,17 @@ void idt_set_entry(idt_entry* entry, uint32_t offset, uint16_t selector, idt_gat
     entry->flags = flags;
 }
 
-void idt_make_interrupt(size_t interrupt, void* callback, idt_gate_type callback_type, idt_flag_type flags) {
+void idt_make_interrupt(size_t interrupt, void* callback, enum idt_gate_type callback_type, enum idt_flag_type flags) {
     idt_callback_routines[interrupt] = callback;
 
     idt_set_entry(&entries[interrupt], (uint32_t)idt_hardware_callbacks[interrupt], 0x08, callback_type, flags);
 }
 
-void idt_make_interrupt_no_status(size_t interrupt, interrupt_no_status callback, idt_gate_type callback_type, idt_flag_type flags) {
+void idt_make_interrupt_no_status(size_t interrupt, interrupt_no_status callback, enum idt_gate_type callback_type, enum idt_flag_type flags) {
     idt_make_interrupt(interrupt, (void*)callback, callback_type, flags);
 }
 
-void idt_make_interrupt_status(size_t interrupt, interrupt_status callback, idt_gate_type callback_type, idt_flag_type flags) {
+void idt_make_interrupt_status(size_t interrupt, interrupt_status callback, enum idt_gate_type callback_type, enum idt_flag_type flags) {
     idt_make_interrupt(interrupt, (void*)callback, callback_type, flags);
 }
 

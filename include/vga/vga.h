@@ -7,7 +7,7 @@
 #define VGA_WIDTH (80)
 #define VGA_HEIGHT (25)
 
-typedef enum {
+enum vga_color_type {
     VGA_COLOR_BLACK,
     VGA_COLOR_BLUE,
     VGA_COLOR_GREEN,
@@ -24,10 +24,10 @@ typedef enum {
     VGA_COLOR_LIGHT_MAGENTA,
     VGA_COLOR_LIGHT_BROWN,
     VGA_COLOR_WHITE
-} vga_color_type;
+};
 
 void vga_init(void);
-void vga_color(vga_color_type, vga_color_type);
+void vga_color(enum vga_color_type, enum vga_color_type);
 void vga_putchar(char c);
 void vga_write(const char*, size_t);
 void vga_print(const char*);

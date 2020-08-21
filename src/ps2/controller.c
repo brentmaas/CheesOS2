@@ -5,7 +5,7 @@
 #define PS2_COMMAND_PORT (0x64)
 #define PS2_DATA_PORT (0x60)
 
-typedef enum {
+enum ps2_status_type {
     PS2_STATUS_OUTPUT = 0x1,
     PS2_STATUS_INPUT = 0x2,
     PS2_STATUS_SYSTEM = 0x4,
@@ -14,9 +14,9 @@ typedef enum {
     PS2_STATUS_UNKNOWN2 = 0x20,
     PS2_STATUS_TIMEOUT = 0x40,
     PS2_STATUS_PARITY = 0x80
-} ps2_status_type;
+};
 
-typedef enum {
+enum ps2_config_type {
     PS2_CONFIG_FIRST_INTERRUPT = 0x1,
     PS2_CONFIG_SECOND_INTERRUPT = 0x2,
     PS2_CONFIG_SYSTEM = 0x4,
@@ -25,9 +25,9 @@ typedef enum {
     PS2_CONFIG_SECOND_CLOCK = 0x20,
     PS2_CONFIG_FIRST_TRANSLATE = 0x40,
     PS2_CONFIG_ZERO2 = 0x80
-} ps2_config_type;
+};
 
-typedef enum {
+enum ps2_command_type {
     PS2_COMMAND_READ_CONFIG = 0x20,
     PS2_COMMAND_WRITE_CONFIG = 0x60,
     PS2_COMMAND_DISABLE_SECOND = 0xA7,
@@ -37,21 +37,21 @@ typedef enum {
     PS2_COMMAND_TEST_FIRST = 0xAB,
     PS2_COMMAND_DISABLE_FIRST = 0xAD,
     PS2_COMMAND_ENABLE_FIRST = 0xAE
-} ps2_command_type;
+};
 
-typedef enum {
+enum ps2_response_type {
     PS2_RESPONSE_SELF_TEST_OK = 0x55
-} ps2_response_type;
+};
 
-ps2_device_type ps2_port1_device = PS2_DEVICE_TYPE_DISABLED;
-ps2_device_type ps2_port2_device = PS2_DEVICE_TYPE_DISABLED;
+enum ps2_device_type ps2_port1_device = PS2_DEVICE_TYPE_DISABLED;
+enum ps2_device_type ps2_port2_device = PS2_DEVICE_TYPE_DISABLED;
 
 void ps2_controller_wait_output(void) {
-    while(io_in8(PS2_COMMAND_PORT) & PS2_STATUS_INPUT); //Input buffer status bit must be 0
+    while(io_in8(PS2_COMMAND_PORT) & PS2_STATUS_INPUT); // Input buffer status bit must be 0
 }
 
 void ps2_controller_wait_input(void) {
-    while(!(io_in8(PS2_COMMAND_PORT) & PS2_STATUS_OUTPUT)); //Output buffer status bit must be 1
+    while(!(io_in8(PS2_COMMAND_PORT) & PS2_STATUS_OUTPUT)); // Output buffer status bit must be 1
 }
 
 void ps2_clear_output(void) {
@@ -60,7 +60,7 @@ void ps2_clear_output(void) {
     }
 }
 
-void ps2_controller_send_buffer(uint8_t command, uint8_t* data, size_t data_size) {
+void ps2_controller_send_buffer(uint8_t command, const uint8_t* data, size_t data_size) {
     ps2_controller_wait_output();
     io_out8(PS2_COMMAND_PORT, command);
 
@@ -141,6 +141,7 @@ int ps2_controller_init(void) {
         ps2_controller_send(PS2_COMMAND_ENABLE_FIRST);
         ps2_port1_device = ps2_device_identify(PS2_DEVICE_FIRST);
     }
+
     if(second_good) {
         ps2_controller_send(PS2_COMMAND_ENABLE_SECOND);
         ps2_port2_device = ps2_device_identify(PS2_DEVICE_SECOND);

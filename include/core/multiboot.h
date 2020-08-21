@@ -3,11 +3,11 @@
 
 #include <stdint.h>
 
-typedef struct {
+struct multiboot_header {
     uint32_t magic;
     uint32_t flags;
     uint32_t checksum;
-} multiboot_header;
+};
 
 enum __multiboot_header_flags {
     MULTIBOOT_REQUIRE_PAGE_ALIGN = 1 << 0,
@@ -16,7 +16,7 @@ enum __multiboot_header_flags {
     MULTIBOOT_REQUIRE_CUSTOM_LOAD = 1 << 16
 };
 
-typedef struct __attribute__((packed)) {
+struct __attribute__((packed)) multiboot_info {
     uint32_t flags;
 
     void* mem_lower;
@@ -86,9 +86,9 @@ typedef struct __attribute__((packed)) {
             uint8_t blue_mask_size;
         } vbe_direct_rgb;
     };
-} multiboot_info;
+};
 
-typedef enum {
+enum multiboot_flags {
     MULTIBOOT_FLAG_MEM_COUNT = 1,
     MULTIBOOT_FLAG_BOOT_DEVICE = 2,
     MULTIBOOT_FLAG_CMDLINE = 4,
@@ -102,6 +102,6 @@ typedef enum {
     MULTIBOOT_FLAG_APM_TABLE = 1024,
     MULTIBOOT_FLAG_VBE_INFO = 2048,
     MULTIBOOT_FLAG_FRAMEBUFFER_INFO = 4096
-} multiboot_flags;
+};
 
 #endif

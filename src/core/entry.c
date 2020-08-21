@@ -57,7 +57,7 @@ void initialize_vga_new() {
     vga_upload_font(0, FONT_CHEESOS);
 }
 
-void kernel_main(multiboot_info* multiboot) {
+void kernel_main(const struct multiboot_info* multiboot) {
     vga_init();
     gdt_init();
     idt_init();

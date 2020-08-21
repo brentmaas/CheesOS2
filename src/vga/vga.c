@@ -8,7 +8,7 @@ static size_t vga_row, vga_column;
 static uint8_t vga_current_color;
 static volatile uint16_t* const vga_buffer = (uint16_t*)0xB8000;
 
-static uint16_t vga_make_color(vga_color_type foreground, vga_color_type background) {
+static uint16_t vga_make_color(enum vga_color_type foreground, enum vga_color_type background) {
     return foreground | (background << 4);
 }
 
@@ -25,7 +25,7 @@ static void vga_write_char(char c, uint8_t color) {
     }
     if(c == '\n' || vga_column >= VGA_WIDTH) {
         vga_column = 0;
-        
+
         if(vga_row == VGA_HEIGHT - 1) {
             vga_scroll(1);
         }else{
@@ -50,7 +50,7 @@ void vga_init(void) {
     }
 }
 
-void vga_color(vga_color_type foreground, vga_color_type background) {
+void vga_color(enum vga_color_type foreground, enum vga_color_type background) {
     vga_current_color = vga_make_color(foreground, background);
 }
 

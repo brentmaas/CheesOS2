@@ -2,10 +2,10 @@
 
 extern void gdt_load(void*);
 
-static gdt_descriptor descriptor;
-static gdt_entry entries[5];
+static struct gdt_descriptor descriptor;
+static struct gdt_entry entries[5];
 
-void gdt_load_entry(gdt_entry* entry, uint32_t base, uint32_t limit, gdt_flags_type flags, gdt_access_type access) {
+void gdt_load_entry(struct gdt_entry* entry, uint32_t base, uint32_t limit, enum gdt_flags_type flags, enum gdt_access_type access) {
     entry->base_low = base & 0xFFFFu;
     entry->base_mid = (base & 0xFF0000u) >> 16u;
     entry->base_high = (base & 0xFF000000u) >> 24u;
