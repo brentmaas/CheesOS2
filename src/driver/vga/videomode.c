@@ -4,7 +4,7 @@
 #include "core/io.h"
 #include <stdio.h>
 
-const vga_videomode VGA_VIDEOMODE_640x480 = {
+const struct vga_videomode VGA_VIDEOMODE_640x480 = {
     .horizontal_timings = {
         .active_area = 640,
         .overscan_back = 8,
@@ -33,7 +33,7 @@ static struct {
 
 // In text modes, planes 0 and 1 are used in odd/even mode
 // Graphics modes use planar mode
-const vga_plane_bits DEFAULT_ENABLED_PLANES[] = {
+const enum vga_plane_bits DEFAULT_ENABLED_PLANES[] = {
     [VGA_MODE_TEXT] = VGA_PLANE_0_BIT | VGA_PLANE_1_BIT,
     [VGA_MODE_GRAPHICS_2_COLOR] = VGA_PLANE_0_BIT,
     [VGA_MODE_GRAPHICS_4_COLOR] = VGA_PLANE_0_BIT | VGA_PLANE_1_BIT,
@@ -66,7 +66,7 @@ static void dump_registers() {
     for (size_t i = 0; i < VGA_NUM_ATC_INDICES; ++i) {
         if (i % 8 == 0) printf("\n    ");
         vga_sync_atc();
-        VGA_WRITE(VGA_PORT_ATC, ((vga_atc_address) {
+        VGA_WRITE(VGA_PORT_ATC, ((struct vga_atc_address) {
             .attribute_address = i,
             .lock_palette = true
         }));
@@ -75,13 +75,13 @@ static void dump_registers() {
 }
 
 static void blank_and_unlock() {
-    vga_crtc_horiz_blanking_end h_blanking_end;
+    struct vga_crtc_horiz_blanking_end h_blanking_end;
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_HORIZ_BLANKING_END);
     VGA_READ(VGA_PORT_CRTC_COLOR_DATA, &h_blanking_end);
     h_blanking_end.enable_vert_retrace_access = true;
     VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, h_blanking_end);
 
-    vga_crtc_vert_retrace_end v_retrace_end;
+    struct vga_crtc_vert_retrace_end v_retrace_end;
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_VERT_RETRACE_END);
     VGA_READ(VGA_PORT_CRTC_COLOR_DATA, &v_retrace_end);
     v_retrace_end.protect = false;
@@ -89,7 +89,7 @@ static void blank_and_unlock() {
 }
 
 static void unblank_and_lock() {
-    vga_crtc_vert_retrace_end v_retrace_end;
+    struct vga_crtc_vert_retrace_end v_retrace_end;
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_VERT_RETRACE_END);
     VGA_READ(VGA_PORT_CRTC_COLOR_DATA, &v_retrace_end);
     v_retrace_end.protect = true;
@@ -98,7 +98,7 @@ static void unblank_and_lock() {
     vga_prepare_atc(0, true);
 }
 
-static uint8_t pitch(const vga_videomode* vidmode, vga_mode mode, vga_address_mode address_mode) {
+static uint8_t pitch(const struct vga_videomode* vidmode, enum vga_mode mode, enum vga_address_mode address_mode) {
     const uint8_t bits_per_plane = 8;
     uint8_t planes;
     uint8_t bits_per_pixel;
@@ -139,7 +139,7 @@ static uint8_t pitch(const vga_videomode* vidmode, vga_mode mode, vga_address_mo
 }
 
 // Assumes CRT registers are unlocked (and leaves them unlocked).
-static void set_crtc_registers(const vga_videomode* vidmode, vga_mode mode) {
+static void set_crtc_registers(const struct vga_videomode* vidmode, enum vga_mode mode) {
     uint8_t h_div = vidmode->dot_mode == VGA_DOT_MODE_9_DPC ? 9 : 8;
 
     // Set horizontal values
@@ -161,7 +161,7 @@ static void set_crtc_registers(const vga_videomode* vidmode, vga_mode mode) {
         VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, h_blanking_start);
 
         io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_HORIZ_BLANKING_END);
-        VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((vga_crtc_horiz_blanking_end) {
+        VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((struct vga_crtc_horiz_blanking_end) {
              // lower 5 bits stored here, 6th bit stored in the retrace end register
             .horiz_blanking_end_low = h_blanking_end & 0x1F,
             .enable_display_skew = false,
@@ -172,7 +172,7 @@ static void set_crtc_registers(const vga_videomode* vidmode, vga_mode mode) {
         VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, h_retrace_start);
 
         io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_HORIZ_RETRACE_END);
-        VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((vga_crtc_horiz_retrace_end) {
+        VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((struct vga_crtc_horiz_retrace_end) {
             .horiz_retrace_end = h_retrace_end & 0x1F, // lower 5 bits
             .horiz_retrace_skew = 0,
             .horiz_blanking_end_high = (h_blanking_end >> 5) & 0x1
@@ -218,7 +218,7 @@ static void set_crtc_registers(const vga_videomode* vidmode, vga_mode mode) {
         VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, (uint8_t) v_total);
 
         io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_OVERFLOW);
-        VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((vga_crtc_overflow) {
+        VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((struct vga_crtc_overflow) {
             .vert_total_8 = (v_total >> 8) & 0x1,
             .vert_display_end_8 = (v_display_end >> 8) & 0x1,
             .vert_retrace_start_8 = (v_retrace_start >> 8) & 0x1,
@@ -230,7 +230,7 @@ static void set_crtc_registers(const vga_videomode* vidmode, vga_mode mode) {
         }));
 
         io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_MAXIMUM_SCAN_LINE);
-        VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((vga_crtc_maximum_scan_line) {
+        VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((struct vga_crtc_maximum_scan_line) {
             .maximum_scan_line = mode == VGA_MODE_TEXT ? VGA_DEFAULT_CHARACTER_HEIGHT : 0,
             .vert_blanking_start_9 = (v_blanking_start >> 9) & 0x1,
             .line_compare_9 = (line_compare >> 9) & 0x1,
@@ -241,7 +241,7 @@ static void set_crtc_registers(const vga_videomode* vidmode, vga_mode mode) {
         VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, (uint8_t) v_retrace_start);
 
         io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_VERT_RETRACE_END);
-        VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((vga_crtc_vert_retrace_end) {
+        VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((struct vga_crtc_vert_retrace_end) {
             .vert_retrace_end = v_retrace_end & 0xF,
             .bandwidth = 0,
             .protect = false
@@ -260,12 +260,12 @@ static void set_crtc_registers(const vga_videomode* vidmode, vga_mode mode) {
         VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, (uint8_t) line_compare);
     }
 
-    vga_address_mode address_mode = mode == VGA_MODE_TEXT ?
+    enum vga_address_mode address_mode = mode == VGA_MODE_TEXT ?
         VGA_ADDRESS_MODE_WORDS : VGA_ADDRESS_MODE_BYTES;
 
     // Set the other display-generation related values
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_MODE);
-    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((vga_crtc_mode) {
+    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((struct vga_crtc_mode) {
         .map13 = true,
         .map14 = true,
         .enable_half_scanline_clock = false,
@@ -279,7 +279,7 @@ static void set_crtc_registers(const vga_videomode* vidmode, vga_mode mode) {
     VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, pitch(vidmode, mode, address_mode));
 
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_UNDERLINE_LOCATION);
-    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((vga_crtc_underline_location) {
+    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((struct vga_crtc_underline_location) {
         .underline_location = 0,
         .enable_quarter_memory_clock = false,
         .enable_dword_addressing = address_mode == VGA_ADDRESS_MODE_DWORDS,
@@ -287,7 +287,7 @@ static void set_crtc_registers(const vga_videomode* vidmode, vga_mode mode) {
 
     // Finally set the other CRTC registers
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_PRESET_ROW_SCAN);
-    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((vga_crtc_preset_row_scan) {
+    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((struct vga_crtc_preset_row_scan) {
         .preset_row_scan = 0,
         .byte_panning = 0
     }));
@@ -298,35 +298,35 @@ static void set_crtc_registers(const vga_videomode* vidmode, vga_mode mode) {
     VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, (uint8_t) 0);
 }
 
-static void set_grc_registers(vga_mode mode) {
+static void set_grc_registers(enum vga_mode mode) {
     io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_SET_RESET);
-    VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_set_reset) {
+    VGA_WRITE(VGA_PORT_GRC_DATA, ((struct vga_grc_set_reset) {
         .planes = 0
     }));
 
     io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_ENABLE_SET_RESET);
-    VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_enable_set_reset) {
+    VGA_WRITE(VGA_PORT_GRC_DATA, ((struct vga_grc_enable_set_reset) {
         .planes = 0
     }));
 
     io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_COLOR_COMPARE);
-    VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_color_compare) {
+    VGA_WRITE(VGA_PORT_GRC_DATA, ((struct vga_grc_color_compare) {
         .planes = 0
     }));
 
     io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_DATA_ROTATE);
-    VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_data_rotate) {
+    VGA_WRITE(VGA_PORT_GRC_DATA, ((struct vga_grc_data_rotate) {
         .rotate_count = 0,
         .operation = VGA_OP_NOP
     }));
 
     io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_READ_MAP);
-    VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_read_map) {
+    VGA_WRITE(VGA_PORT_GRC_DATA, ((struct vga_grc_read_map) {
         .plane = 0
     }));
 
     io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_MODE);
-    VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_mode) {
+    VGA_WRITE(VGA_PORT_GRC_DATA, ((struct vga_grc_mode) {
         .write_mode = 0,
         .read_mode = 0,
         .enable_host_odd_even = mode == VGA_MODE_TEXT, // Odd-even mode for reading
@@ -335,7 +335,7 @@ static void set_grc_registers(vga_mode mode) {
     }));
 
     io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_MISC);
-    VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_misc) {
+    VGA_WRITE(VGA_PORT_GRC_DATA, ((struct vga_grc_misc) {
         .enable_graphics_mode = mode != VGA_MODE_TEXT,
         .enable_chain_odd_even = false,
         .memory_map = mode == VGA_MODE_TEXT ?
@@ -343,7 +343,7 @@ static void set_grc_registers(vga_mode mode) {
     }));
 
     io_out8(VGA_PORT_GRC_ADDR, VGA_IND_GRC_COLOR_DONT_CARE);
-    VGA_WRITE(VGA_PORT_GRC_DATA, ((vga_grc_color_compare) {
+    VGA_WRITE(VGA_PORT_GRC_DATA, ((struct vga_grc_color_compare) {
         .planes = VGA_PLANE_ALL
     }));
 
@@ -351,15 +351,15 @@ static void set_grc_registers(vga_mode mode) {
     VGA_WRITE(VGA_PORT_GRC_DATA, (uint8_t) 0xFF);
 }
 
-static void set_seq_registers(const vga_videomode* vidmode, vga_mode mode) {
+static void set_seq_registers(const struct vga_videomode* vidmode, enum vga_mode mode) {
     io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_RESET);
-    VGA_WRITE(VGA_PORT_SEQ_DATA, ((vga_seq_reset) {
+    VGA_WRITE(VGA_PORT_SEQ_DATA, ((struct vga_seq_reset) {
         .synchronous_reset = true,
         .asynchronous_reset = true
     }));
 
     io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_CLOCKING_MODE);
-    VGA_WRITE(VGA_PORT_SEQ_DATA, ((vga_seq_clocking_mode) {
+    VGA_WRITE(VGA_PORT_SEQ_DATA, ((struct vga_seq_clocking_mode) {
         .dot_mode = vidmode->dot_mode,
         .shift_load_rate = 0,
         .enable_half_dot_clock = false, // TODO: set for 320 and 360 resolutions
@@ -373,7 +373,7 @@ static void set_seq_registers(const vga_videomode* vidmode, vga_mode mode) {
     VGA_WRITE(VGA_IND_SEQ_CHARACTER_MAP_SELECT, (uint8_t) 0);
 
     io_out8(VGA_PORT_SEQ_ADDR, VGA_IND_SEQ_MEMORY_MODE);
-    VGA_WRITE(VGA_PORT_SEQ_DATA, ((vga_seq_memory_mode) {
+    VGA_WRITE(VGA_PORT_SEQ_DATA, ((struct vga_seq_memory_mode) {
         .extended_memory = true,
         .disable_odd_even = mode != VGA_MODE_TEXT,
         .enable_chain_4 = false
@@ -381,7 +381,7 @@ static void set_seq_registers(const vga_videomode* vidmode, vga_mode mode) {
 }
 
 // Assumes display is blanked and unlocked.
-static void set_atc_registers(vga_mode mode) {
+static void set_atc_registers(enum vga_mode mode) {
     // TODO: Allow more control
     for (uint8_t i = 0; i < 16; ++i) {
         vga_prepare_atc(i, false);
@@ -389,7 +389,7 @@ static void set_atc_registers(vga_mode mode) {
     }
 
     vga_prepare_atc(VGA_IND_ATC_MODE_CONTROL, false);
-    VGA_WRITE(VGA_PORT_ATC, ((vga_atc_mode_control) {
+    VGA_WRITE(VGA_PORT_ATC, ((struct vga_atc_mode_control) {
         .enable_graphics = mode != VGA_MODE_TEXT,
         .enable_monochrome_emulation = false,
         .enable_line_graphics = true,
@@ -400,7 +400,7 @@ static void set_atc_registers(vga_mode mode) {
     }));
 
     vga_sync_atc();
-    VGA_WRITE(VGA_PORT_ATC, ((vga_atc_address) {
+    VGA_WRITE(VGA_PORT_ATC, ((struct vga_atc_address) {
         .attribute_address = VGA_IND_ATC_OVERSCAN_COLOR,
         .lock_palette = true
     }));
@@ -409,17 +409,17 @@ static void set_atc_registers(vga_mode mode) {
     VGA_WRITE(VGA_PORT_ATC, (uint8_t) 0);
 
     vga_prepare_atc(VGA_IND_ATC_COLOR_PLANE_ENABLE, false);
-    VGA_WRITE(VGA_PORT_ATC, ((vga_atc_color_plane_enable) {
+    VGA_WRITE(VGA_PORT_ATC, ((struct vga_atc_color_plane_enable) {
         .planes = DEFAULT_ENABLED_PLANES[mode]
     }));
 
     vga_prepare_atc(VGA_IND_ATC_HORIZ_PIXEL_PANNING, false);
-    VGA_WRITE(VGA_PORT_ATC, ((vga_atc_horiz_pixel_panning) {
+    VGA_WRITE(VGA_PORT_ATC, ((struct vga_atc_horiz_pixel_panning) {
         .pixel_shift = 0
     }));
 
     vga_prepare_atc(VGA_IND_ATC_COLOR_SELECT, false);
-    VGA_WRITE(VGA_PORT_ATC, ((vga_atc_color_select) {
+    VGA_WRITE(VGA_PORT_ATC, ((struct vga_atc_color_select) {
         .color_select_5_4 = 0,
         .color_select_7_6 = 0
     }));
@@ -427,13 +427,13 @@ static void set_atc_registers(vga_mode mode) {
 
 static void reset_cursor() {
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_CURSOR_START);
-    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((vga_crtc_cursor_start) {
+    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((struct vga_crtc_cursor_start) {
         .cursor_scan_line_start = 0,
         .disable_cursor = true
     }));
 
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_CURSOR_END);
-    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((vga_crtc_cursor_end) {
+    VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, ((struct vga_crtc_cursor_end) {
         .cursor_scan_line_end = VGA_DEFAULT_CHARACTER_HEIGHT - 1,
         .cursor_skew = 0
     }));
@@ -445,9 +445,9 @@ static void reset_cursor() {
 }
 
 static void clear_vram(uint8_t planes) {
-    const vga_memory_map map = VGA_MEMORY_MAP_A0000_64K;
-    vga_plane_bits orig_mask = vga_mask_planes(planes);
-    vga_memory_map orig_map = vga_map_memory(map);
+    const enum vga_memory_map map = VGA_MEMORY_MAP_A0000_64K;
+    enum vga_plane_bits orig_mask = vga_mask_planes(planes);
+    enum vga_memory_map orig_map = vga_map_memory(map);
 
     volatile uint8_t* vram = vga_memory_map_ptr(map);
     for (size_t i = 0; i < (1 << 16); ++i) {
@@ -458,8 +458,8 @@ static void clear_vram(uint8_t planes) {
     vga_mask_planes(orig_mask);
 }
 
-void vga_set_videomode(const vga_videomode* vidmode, vga_mode mode) {
-    VGA_WRITE(VGA_PORT_MISC_WRITE, ((vga_misc) {
+void vga_set_videomode(const struct vga_videomode* vidmode, enum vga_mode mode) {
+    VGA_WRITE(VGA_PORT_MISC_WRITE, ((struct vga_misc) {
         .io_emulation_mode = VGA_EMULATION_MODE_COLOR,
         .enable_vram_access = 1,
         .clock_select = vidmode->clock_speed,

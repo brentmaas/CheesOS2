@@ -10,7 +10,7 @@
 // The GRC registers (set/reset, enable set/reset, data rotate, operation)
 // are assumed to be 0.
 
-typedef enum {
+enum vga_attr {
     VGA_ATTR_BLACK = 0,
     VGA_ATTR_BLUE = 1,
     VGA_ATTR_GREEN = 2,
@@ -25,9 +25,9 @@ typedef enum {
     VGA_ATTR_CHARSET_B = 8,
 
     VGA_ATTR_WHITE = VGA_ATTR_GRAY | VGA_ATTR_LIGHT,
-} vga_attr;
+};
 
-static uint8_t vga_make_attr(vga_attr fg, vga_attr bg) {
+static uint8_t vga_make_attr(enum vga_attr fg, enum vga_attr bg) {
     return fg | bg << 4;
 }
 
@@ -37,7 +37,7 @@ static uint8_t vga_make_attr(vga_attr fg, vga_attr bg) {
 typedef uint8_t vga_glyph[VGA_FONT_ROWS];
 typedef vga_glyph vga_font[VGA_FONT_GLYPHS];
 
-typedef struct {
+struct vga_font_options {
     uint8_t text_height;
     struct {
         uint8_t start;
@@ -45,7 +45,7 @@ typedef struct {
     } cursor;
     bool enable_blink;
     bool enable_line_graphics;
-} vga_font_options;
+};
 
 void vga_clear_text(uint8_t clearchar, uint8_t clearattr);
 
@@ -57,7 +57,7 @@ void vga_enable_cursor(bool enabled);
 
 void vga_upload_font(uint8_t charset, const vga_font font);
 void vga_set_charsets(uint8_t charset_a, uint8_t charset_b);
-void vga_set_fontopts(const vga_font_options* fopts);
+void vga_set_fontopts(const struct vga_font_options* fopts);
 
 uint8_t vga_get_height_chars();
 

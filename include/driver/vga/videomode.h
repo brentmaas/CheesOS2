@@ -19,37 +19,37 @@ struct vga_crt_timings {
     uint8_t overscan_front;
 };
 
-typedef enum {
+enum vga_mode {
     VGA_MODE_TEXT,
     VGA_MODE_GRAPHICS_2_COLOR,
     VGA_MODE_GRAPHICS_4_COLOR,
     VGA_MODE_GRAPHICS_16_COLOR,
     VGA_MODE_GRAPHICS_256_COLOR
-} vga_mode;
+};
 
 // Return the amount of bits required to store a value for a particular color depth
 #define VGA_COLOR_DEPTH_REQUIRED_BITS(color_depth) (1 << (color_depth))
 
-typedef enum {
+enum vga_address_mode {
     VGA_ADDRESS_MODE_BYTES,
     VGA_ADDRESS_MODE_WORDS,
     VGA_ADDRESS_MODE_DWORDS
-} vga_address_mode;
+};
 
 // Return size in bytes of element corresponding to an address mode
 #define VGA_ADDRESS_MODE_SIZE(address_mode) (1 << (address_mode))
 
-typedef struct {
+struct vga_videomode {
     struct vga_crt_timings horizontal_timings;
     struct vga_crt_timings vertical_timings;
 
-    vga_dot_mode dot_mode : 1;
-    vga_clock_speed clock_speed : 2;
-} vga_videomode;
+    enum vga_dot_mode dot_mode : 1;
+    enum vga_clock_speed clock_speed : 2;
+};
 
-extern const vga_videomode VGA_VIDEOMODE_640x480;
+extern const struct vga_videomode VGA_VIDEOMODE_640x480;
 
-void vga_set_videomode(const vga_videomode* vidmode, vga_mode mode);
+void vga_set_videomode(const struct vga_videomode* vidmode, enum vga_mode mode);
 
 uint16_t vga_get_width_pixels();
 uint16_t vga_get_height_pixels();

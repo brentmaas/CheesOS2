@@ -54,14 +54,14 @@
 void vga_sync_atc();
 void vga_prepare_atc(uint8_t index, bool lock_palette);
 
-typedef struct {
+struct vga_io_state {
     uint8_t grc;
     uint8_t seq;
     uint8_t crtc;
     uint8_t atc;
-} vga_io_state;
+};
 
-void vga_read_io_state(vga_io_state* state);
-void vga_write_io_state(const vga_io_state* state);
+void vga_read_io_state(struct vga_io_state* state);
+void vga_write_io_state(const struct vga_io_state* state);
 
 #endif

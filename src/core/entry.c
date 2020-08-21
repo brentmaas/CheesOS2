@@ -21,7 +21,7 @@
 
 void initialize_vga_new() {
     vga_set_videomode(&VGA_VIDEOMODE_640x480, VGA_MODE_TEXT);
-    const vga_dac_color dos_colors[] = {
+    const struct vga_dac_color dos_colors[] = {
         [VGA_ATTR_BLACK] = {0, 0, 0},
         [VGA_ATTR_BLUE] = {0, 0, 32},
         [VGA_ATTR_GREEN] = {0, 32, 0},
@@ -43,7 +43,7 @@ void initialize_vga_new() {
 
     vga_dac_write(0, 16, dos_colors);
 
-    const vga_font_options fontopts = {
+    const struct vga_font_options fontopts = {
         .text_height = 16,
         .cursor = {
             .start = 14,

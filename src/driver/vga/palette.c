@@ -4,7 +4,7 @@
 #include "core/io.h"
 #include "interrupt/idt.h"
 
-void vga_set_palette(const vga_palette* palette) {
+void vga_set_palette(const struct vga_palette* palette) {
     for (uint8_t i = 0; i < VGA_PALETTE_SIZE; ++i) {
         vga_prepare_atc(i, false);
         VGA_WRITE(VGA_PORT_ATC, palette->palette_indices[i]);
@@ -44,7 +44,7 @@ void vga_dac_write_r3g3b2() {
     idt_enable();
 }
 
-void vga_dac_write(uint8_t offset, size_t size, const vga_dac_color* colors) {
+void vga_dac_write(uint8_t offset, size_t size, const struct vga_dac_color* colors) {
     idt_disable();
     io_out8(VGA_PORT_DAC_ADDR_WRITE, offset);
 
