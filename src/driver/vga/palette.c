@@ -16,7 +16,7 @@ void vga_set_palette(const struct vga_palette* palette) {
     vga_prepare_atc(0, true);
 }
 
-void vga_dac_write_r3g3b2() {
+void vga_dac_write_r3g3b2(void) {
     idt_disable();
     io_out8(VGA_PORT_DAC_ADDR_WRITE, 0);
 

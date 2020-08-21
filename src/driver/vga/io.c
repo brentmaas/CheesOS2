@@ -2,7 +2,7 @@
 #include "driver/vga/registers.h"
 #include <stdbool.h>
 
-void vga_sync_atc() {
+void vga_sync_atc(void) {
     (void) io_in8(VGA_PORT_INPUT_STATUS_1_COLOR);
 }
 

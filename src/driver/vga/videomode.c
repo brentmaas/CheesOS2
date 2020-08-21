@@ -43,7 +43,7 @@ const enum vga_plane_bits DEFAULT_ENABLED_PLANES[] = {
     [VGA_MODE_GRAPHICS_256_COLOR] = VGA_PLANE_ALL,
 };
 
-static void dump_registers() {
+static void dump_registers(void) {
     char line[128] = {0};
     char* write_ptr = line;
     size_t size_left = sizeof(line);
@@ -91,7 +91,7 @@ static void dump_registers() {
     log_debug(line);
 }
 
-static void blank_and_unlock() {
+static void blank_and_unlock(void) {
     struct vga_crtc_horiz_blanking_end h_blanking_end;
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_HORIZ_BLANKING_END);
     VGA_READ(VGA_PORT_CRTC_COLOR_DATA, &h_blanking_end);
@@ -105,7 +105,7 @@ static void blank_and_unlock() {
     VGA_WRITE(VGA_PORT_CRTC_COLOR_DATA, v_retrace_end);
 }
 
-static void unblank_and_lock() {
+static void unblank_and_lock(void) {
     struct vga_crtc_vert_retrace_end v_retrace_end;
     io_out8(VGA_PORT_CRTC_COLOR_ADDR, VGA_IND_CRTC_VERT_RETRACE_END);
     VGA_READ(VGA_PORT_CRTC_COLOR_DATA, &v_retrace_end);
@@ -502,14 +502,14 @@ void vga_set_videomode(const struct vga_videomode* vidmode, enum vga_mode mode) 
     VGA_SETTINGS.width_chars = vidmode->horizontal_timings.active_area / h_div;
 }
 
-uint16_t vga_get_width_pixels() {
+uint16_t vga_get_width_pixels(void) {
     return VGA_SETTINGS.width_pixels;
 }
 
-uint16_t vga_get_height_pixels() {
+uint16_t vga_get_height_pixels(void) {
     return VGA_SETTINGS.height_pixels;
 }
 
-uint8_t vga_get_width_chars() {
+uint8_t vga_get_width_chars(void) {
     return VGA_SETTINGS.width_chars;
 }

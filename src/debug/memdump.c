@@ -18,17 +18,4 @@ void debug_memdump(void* addr, size_t size) {
 
         log_debug(buffer);
     }
-
-    // for(size_t i = 0; i < size; ++i) {
-    //     if(i % 16 == 0 && i > 0) {
-    //         vga_print("\n");
-    //     }
-
-    //     char value[4];
-    //     value[0] = hex_digit((data[i] & 0xF0u) >> 4u);
-    //     value[1] = hex_digit((data[i] & 0xFu));
-    //     value[2] = ' ';
-    //     value[3] = '\0';
-    //     vga_print(value);
-    // }
 }

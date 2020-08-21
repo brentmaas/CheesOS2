@@ -19,7 +19,7 @@ struct vga_dac_color {
 
 #define VGA_DAC_NUM_ENTRIES (256)
 
-void vga_dac_write_r3g3b2();
+void vga_dac_write_r3g3b2(void);
 void vga_dac_write(uint8_t offset, size_t size, const struct vga_dac_color* colors);
 
 #endif

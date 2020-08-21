@@ -34,7 +34,7 @@ static bool pos_in_range(uint8_t col, uint8_t row) {
 }
 
 void vga_clear_text(uint8_t clearchar, uint8_t clearattr) {
-    uint16_t buf_max = 2 * vga_get_width_chars() * vga_get_height_chars();
+    uint16_t buf_max = max_offset();
 
     for (size_t i = 0; i < buf_max;) {
         TEXT_VRAM[i++] = clearchar;
@@ -63,6 +63,44 @@ void vga_write_char(uint8_t col, uint8_t row, uint8_t value, uint8_t attr) {
     uint16_t offset = pos_to_offset(col, row);
     TEXT_VRAM[offset] = value;
     TEXT_VRAM[offset + 1] = attr;
+}
+
+void vga_scroll_text(uint8_t clearchar, uint8_t clearattr, int rows) {
+    uint8_t w = vga_get_width_chars();
+    uint8_t h = vga_get_height_chars();
+    uint16_t buf_max = max_offset();
+
+    if (rows > 0) {
+        if (rows > h) {
+            rows = h;
+        }
+
+        size_t offset = w * 2 * rows;
+        size_t i = 0;
+        while (i + offset < buf_max) {
+            TEXT_VRAM[i] = TEXT_VRAM[i + offset];
+            ++i;
+        }
+
+        while (i < buf_max) {
+            TEXT_VRAM[i++] = clearchar;
+            TEXT_VRAM[i++] = clearattr;
+        }
+    } else if (rows < 0) {
+        rows = -rows > h ? h : -rows;
+
+        size_t offset = w * 2 * rows;
+        size_t i = buf_max;
+        while (i - offset > 0) {
+            --i;
+            TEXT_VRAM[i] = TEXT_VRAM[i - offset];
+        }
+
+        while (i > 0) {
+            TEXT_VRAM[--i] = clearattr;
+            TEXT_VRAM[--i] = clearchar;
+        }
+    }
 }
 
 void vga_set_cursor(uint8_t col, uint8_t row) {
@@ -145,6 +183,6 @@ void vga_set_fontopts(const struct vga_font_options* fopts) {
     VGA_TEXT_SETTINGS.height_chars = vga_get_height_pixels() / fopts->text_height;
 }
 
-uint8_t vga_get_height_chars() {
+uint8_t vga_get_height_chars(void) {
     return VGA_TEXT_SETTINGS.height_chars;
 }

@@ -51,7 +51,7 @@
 
 #define VGA_WRITE(port, reg) io_out8(port, BITCAST(uint8_t, reg))
 
-void vga_sync_atc();
+void vga_sync_atc(void);
 void vga_prepare_atc(uint8_t index, bool lock_palette);
 
 struct vga_io_state {
