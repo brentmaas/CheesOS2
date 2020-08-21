@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdarg.h>
 
 #define VGA_WIDTH (80)
 #define VGA_HEIGHT (25)
@@ -32,6 +33,7 @@ void vga_putchar(char c);
 void vga_write(const char*, size_t);
 void vga_print(const char*);
 void vga_printf(const char*, ...);
+void vga_vprintf(const char*, va_list);
 void vga_scroll(size_t);
 
 #endif

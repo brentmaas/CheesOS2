@@ -38,7 +38,6 @@ static void vga_write_char(char c, uint8_t color) {
         vga_buffer[vga_row * VGA_WIDTH + vga_column] = vga_make_char(c, color);
         ++vga_column;
     }
-
 }
 
 void vga_init(void) {
@@ -80,6 +79,10 @@ void vga_printf(const char* format, ...) {
     va_start(args, format);
     vcprintf(&vga_cprintf_cbk, NULL, format, args);
     va_end(args);
+}
+
+void vga_vprintf(const char* format, va_list args) {
+    vcprintf(&vga_cprintf_cbk, NULL, format, args);
 }
 
 void vga_scroll(size_t rows) {

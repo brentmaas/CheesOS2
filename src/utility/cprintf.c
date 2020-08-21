@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <limits.h>
 
 #define UINTMAX_DIGITS 20 // log10(uintmax_t) == 20 digits
 #define UINTMAX_NIBBLES (sizeof(uintmax_t) * 2)
@@ -280,6 +281,101 @@ int cprintf(cprintf_write_cbk cbk, void* context, const char* format, ...) {
     va_list args;
     va_start(args, format);
     int result = vcprintf(cbk, context, format, args);
+    va_end(args);
+    return result;
+}
+
+struct vsnprintf_ctx {
+    size_t num_written;
+    char* buffer;
+    size_t bufsz;
+};
+
+int vsnprintf_cbk(void* context, const char* data, size_t size) {
+    struct vsnprintf_ctx* ctx = context;
+
+    if (ctx->bufsz > 0 && ctx->num_written < ctx->bufsz - 1) {
+        size_t size_left = ctx->bufsz - 1 - ctx->num_written;
+        size_t write_size = size_left < size ? size_left : size;
+        for (size_t i = 0; i < write_size; ++i) {
+            ctx->buffer[ctx->num_written + i] = data[i];
+        }
+    }
+
+    ctx->num_written += size;
+    return 0;
+}
+
+int vsnprintf(char* restrict buffer, size_t bufsz, const char* restrict format, va_list args) {
+    struct vsnprintf_ctx ctx = {
+        .num_written = 0,
+        .buffer = buffer,
+        .bufsz = bufsz,
+    };
+    int result = vcprintf(vsnprintf_cbk, &ctx, format, args);
+    if (result) {
+        return result;
+    }
+
+    if (ctx.num_written < bufsz) {
+        buffer[ctx.num_written] = 0;
+    } else if (bufsz > 0) {
+        buffer[bufsz] = 0;
+    }
+
+    return ctx.num_written;
+}
+
+int snprintf(char* restrict buffer, size_t bufsz, const char* restrict format, ...) {
+    va_list args;
+    va_start(args, format);
+    int result = vsnprintf(buffer, bufsz, format, args);
+    va_end(args);
+    return result;
+}
+
+struct vbprintf_ctx {
+    char* buffer;
+    size_t size_left;
+};
+
+int vbprintf_cbk(void* context, const char* data, size_t size) {
+    struct vbprintf_ctx* ctx = context;
+
+    if (ctx->size_left == 0) {
+        return 0;
+    }
+
+    size_t write_size = ctx->size_left < size ? ctx->size_left : size;
+    for (size_t i = 0; i < write_size; ++i) {
+        ctx->buffer[i] = data[i];
+    }
+
+    ctx->buffer += write_size;
+    ctx->size_left -= write_size;
+    return 0;
+}
+
+int vbprintf(char** restrict buffer, size_t* size_left, const char* restrict format, va_list args) {
+    struct vbprintf_ctx ctx = {
+        .buffer = *buffer,
+        .size_left = *size_left,
+    };
+
+    int result = vcprintf(vbprintf_cbk, &ctx, format, args);
+    if (ctx.size_left > 0) {
+        ctx.buffer[0] = 0;
+    }
+
+    *buffer = ctx.buffer;
+    *size_left = ctx.size_left;
+    return result;
+}
+
+int bprintf(char** restrict buffer, size_t* size_left, const char* restrict format, ...) {
+    va_list args;
+    va_start(args, format);
+    int result = vbprintf(buffer, size_left, format, args);
     va_end(args);
     return result;
 }

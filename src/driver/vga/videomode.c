@@ -1,8 +1,10 @@
 #include "driver/vga/videomode.h"
 #include "driver/vga/io.h"
 #include "driver/vga/util.h"
+
 #include "core/io.h"
-#include "vga/vga.h"
+#include "debug/log.h"
+#include "utility/cprintf.h"
 
 const struct vga_videomode VGA_VIDEOMODE_640x480 = {
     .horizontal_timings = {
@@ -42,36 +44,51 @@ const enum vga_plane_bits DEFAULT_ENABLED_PLANES[] = {
 };
 
 static void dump_registers() {
-    vga_printf("misc:\n    %02X\nsequencer:\n    ", io_in8(VGA_PORT_MISC_READ));
+    char line[128] = {0};
+    char* write_ptr = line;
+    size_t size_left = sizeof(line);
+
+    log_debug("VGA register dump:");
+    log_debug("misc: %02X", io_in8(VGA_PORT_MISC_READ));
+
+    bprintf(&write_ptr, &size_left, "seq:");
     for (size_t i = 0; i < VGA_NUM_SEQ_INDICES; ++i) {
         io_out8(VGA_PORT_SEQ_ADDR, i);
-        vga_printf("%02X ", io_in8(VGA_PORT_SEQ_DATA));
+        bprintf(&write_ptr, &size_left, " %02X", io_in8(VGA_PORT_SEQ_DATA));
     }
+    log_debug(line);
 
-    vga_print("\ncrtc:");
+    write_ptr = line;
+    size_left = sizeof(line);
+    bprintf(&write_ptr, &size_left, "crtc:");
     for (size_t i = 0; i < VGA_NUM_CRTC_INDICES; ++i) {
-        if (i % 8 == 0) vga_printf("\n    ");
         io_out8(VGA_PORT_CRTC_COLOR_ADDR, i);
-        vga_printf("%02X ", io_in8(VGA_PORT_CRTC_COLOR_DATA));
+        bprintf(&write_ptr, &size_left, " %02X", io_in8(VGA_PORT_CRTC_COLOR_DATA));
     }
+    log_debug(line);
 
-    vga_print("\ngraphics:");
+    write_ptr = line;
+    size_left = sizeof(line);
+    bprintf(&write_ptr, &size_left, "grc:");
     for (size_t i = 0; i < VGA_NUM_GRC_INDICES; ++i) {
-        if (i % 8 == 0) vga_printf("\n    ");
         io_out8(VGA_PORT_GRC_ADDR, i);
-        vga_printf("%02X ", io_in8(VGA_PORT_GRC_DATA));
+        bprintf(&write_ptr, &size_left, " %02X", io_in8(VGA_PORT_GRC_DATA));
     }
+    log_debug(line);
 
-    vga_print("\natc:");
+    write_ptr = line;
+    size_left = sizeof(line);
+    bprintf(&write_ptr, &size_left, "atc:");
     for (size_t i = 0; i < VGA_NUM_ATC_INDICES; ++i) {
-        if (i % 8 == 0) vga_print("\n    ");
         vga_sync_atc();
         VGA_WRITE(VGA_PORT_ATC, ((struct vga_atc_address) {
             .attribute_address = i,
             .lock_palette = true
         }));
-        vga_printf("%02X ", io_in8(VGA_PORT_ATC_READ));
+
+        bprintf(&write_ptr, &size_left, " %02X", io_in8(VGA_PORT_ATC_READ));
     }
+    log_debug(line);
 }
 
 static void blank_and_unlock() {
