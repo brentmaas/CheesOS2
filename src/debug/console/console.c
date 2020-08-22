@@ -93,8 +93,9 @@ void console_putchar(char c) {
         return;
     } else if (c == '\n' || CONSOLE_STATE.col >= w) {
         CONSOLE_STATE.col = 0;
-        if (CONSOLE_STATE.row >= h) {
+        if (CONSOLE_STATE.row >= h - 1) {
             console_scroll(1);
+            CONSOLE_STATE.row = h - 1;
         } else {
             ++CONSOLE_STATE.row;
         }

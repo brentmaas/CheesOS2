@@ -16,6 +16,21 @@ enum __multiboot_header_flags {
     MULTIBOOT_REQUIRE_CUSTOM_LOAD = 1 << 16
 };
 
+enum multiboot_mmap_type {
+    MULTIBOOT_MMAP_AVAILABLE = 1,
+    MULTIBOOT_MMAP_RESERVED = 2,
+    MULTIBOOT_MMAP_ACPI = 3,
+    MULTIBOOT_MMAP_ACPI_NVS = 4,
+    MULTIBOOT_MMAP_DEFECTIVE = 5
+};
+
+struct __attribute__((packed)) multiboot_mmap_entry {
+    uint32_t size;
+    uint64_t addr;
+    uint64_t len;
+    enum multiboot_mmap_type type;
+};
+
 struct __attribute__((packed)) multiboot_info {
     uint32_t flags;
 
@@ -44,10 +59,8 @@ struct __attribute__((packed)) multiboot_info {
         } elf;
     };
 
-
-
     uint32_t mmap_length;
-    void* mmap_addr;
+    struct multiboot_mmap_entry* mmap_addr;
 
     uint32_t drives_length;
     void* drives_addr;

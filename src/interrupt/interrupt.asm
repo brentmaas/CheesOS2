@@ -6,8 +6,6 @@ GLOBAL idt_enable
 GLOBAL idt_disable
 GLOBAL idt_create_handler_table
 
-EXTERN debug_memdump
-
 SECTION .text
 
 idt_load:

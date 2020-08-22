@@ -66,6 +66,19 @@ void kernel_main(const struct multiboot_info* multiboot) {
         log_info("Booted with command line \"%s\"", multiboot->cmdline);
     }
 
+    uintptr_t entry_cur = (uintptr_t) multiboot->mmap_addr;
+    uintptr_t entry_end = (uintptr_t) multiboot->mmap_addr + multiboot->mmap_length;
+    while (entry_cur < entry_end) {
+        const struct multiboot_mmap_entry* entry = (struct multiboot_mmap_entry*) entry_cur;
+        uint64_t addr = entry->addr;
+        uint64_t size = entry->len;
+        log_info("Memory region: 0x%016llX, %llu KiB, type: %u", addr, size >> 10, entry->type);
+        entry_cur += entry->size + sizeof(entry->size);
+    }
+
+    log_info("Mem lower: %p", (uintptr_t) multiboot->mem_lower * 1000);
+    log_info("Mem upper: %p", (uintptr_t) multiboot->mem_upper * 1000);
+
     if (ps2_controller_init()) {
         log_error("PS2 initialization failed");
         return;
