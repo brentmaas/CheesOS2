@@ -10,6 +10,7 @@
 #include "driver/serial/serial.h"
 
 #include "ps2/controller.h"
+#include "ps2/device.h"
 
 #include "debug/log.h"
 #include "debug/console/console.h"
@@ -54,7 +55,8 @@ void kernel_main(const struct multiboot_info* multiboot) {
     log_info("Initializing IDT");
     idt_init();
     pic_remap(0x20, 0x28);
-    pic_set_mask(0xFFFF); //Disable PIC
+    pic_set_mask(0xFFFF);
+    ps2_device_register_interrupts(0x21, 0x2C);
     idt_enable();
 
     if (multiboot->flags & MULTIBOOT_FLAG_BOOT_LOADER_NAME) {
@@ -78,5 +80,5 @@ void kernel_main(const struct multiboot_info* multiboot) {
     console_print("\x90\x91\x91\x91\x91\x91\x91\x91\x91\x92\n");
     console_set_attr(VGA_ATTR_WHITE, VGA_ATTR_BLACK);
 
-    console_shell_loop();
+    //console_shell_loop();
 }

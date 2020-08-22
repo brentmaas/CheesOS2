@@ -46,7 +46,6 @@ void idt_init(void);
 void idt_enable(void);
 void idt_disable(void);
 
-//NOTE TO ROBIN: DO NOT CALL UNLESS INTERRUPTS ARE DISABLED
 void idt_make_interrupt_no_status(size_t interrupt, interrupt_no_status callback, enum idt_gate_type callback_type, enum idt_flag_type flags);
 void idt_make_interrupt_status(size_t interrupt, interrupt_status callback, enum idt_gate_type callback_type, enum idt_flag_type flags);
 

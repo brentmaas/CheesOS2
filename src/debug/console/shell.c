@@ -1,8 +1,6 @@
 #include "debug/console/shell.h"
 #include "debug/console/console.h"
 
-#include "ps2/scancode.h"
-
 #include <string.h>
 #include <stdbool.h>
 
@@ -13,6 +11,8 @@ static int is_command(char* input, const char* command) {
 
 void console_shell_loop(void) {
     console_print("CheeSH v0.1\nKan niet wachten tot m'n shitcode gepurged wordt\n");
+    while(true) {}
+    /*
     while (true) {
         console_print("> ");
 
@@ -43,4 +43,5 @@ void console_shell_loop(void) {
             console_printf("Unknown command: %s\n", input);
         }
     }
+    */
 }
