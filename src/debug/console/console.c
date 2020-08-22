@@ -106,6 +106,13 @@ void console_putchar(char c) {
     }
 }
 
+void console_erasechar(){
+    if(CONSOLE_STATE.col > 0){
+        --CONSOLE_STATE.col;
+        vga_write_char(CONSOLE_STATE.col, CONSOLE_STATE.row, ' ', CONSOLE_STATE.attr);
+    }
+}
+
 void console_write(const char* data, size_t size) {
     for (size_t i = 0; i < size; ++i) {
         console_putchar(data[i]);
