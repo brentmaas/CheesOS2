@@ -60,7 +60,7 @@ $(BUILD)/objects/%.asm.o: %.asm
 $(BUILD)/gen/res/fonts.o: $(FONTS)
 	@echo Generating fonts
 	@mkdir -p $(dir $@)
-	@python tools/createcharmap.py \
+	@python3 tools/createcharmap.py \
 		-C $(BUILD)/gen/res/fonts.c \
 		-H $(BUILD)/gen/res/fonts.h \
 		-I res/fonts.h \
