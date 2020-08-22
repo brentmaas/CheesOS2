@@ -4,19 +4,16 @@
 #include "memory/gdt.h"
 #include "interrupt/idt.h"
 #include "core/multiboot.h"
-#include "core/io.h"
 #include "interrupt/pic.h"
 
-#include "driver/vga/videomode.h"
-#include "driver/vga/palette.h"
 #include "driver/vga/text.h"
-#include "res/fonts.h"
 
 #include "driver/serial/serial.h"
 
 #include "ps2/controller.h"
 
 #include "debug/log.h"
+#include "debug/assert.h"
 #include "debug/console/console.h"
 #include "debug/console/shell.h"
 

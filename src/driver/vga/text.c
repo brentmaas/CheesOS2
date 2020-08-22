@@ -3,7 +3,10 @@
 #include "driver/vga/registers.h"
 #include "driver/vga/util.h"
 #include "driver/vga/videomode.h"
+
 #include "core/io.h"
+#include "debug/assert.h"
+
 #include <stddef.h>
 
 static volatile uint8_t* TEXT_VRAM = (volatile uint8_t*) 0xB8000;
@@ -43,9 +46,7 @@ void vga_clear_text(uint8_t clearchar, uint8_t clearattr) {
 }
 
 void vga_write_str(uint8_t col, uint8_t row, const char* ptr, uint8_t attr) {
-    if (!pos_in_range(col, row)) {
-        return;
-    }
+    assert(pos_in_range(col, row));
 
     uint16_t offset = pos_to_offset(col, row);
     uint16_t buf_max = max_offset();
@@ -56,9 +57,7 @@ void vga_write_str(uint8_t col, uint8_t row, const char* ptr, uint8_t attr) {
 }
 
 void vga_write_char(uint8_t col, uint8_t row, uint8_t value, uint8_t attr) {
-    if (!pos_in_range(col, row)) {
-        return;
-    }
+    assert(pos_in_range(col, row));
 
     uint16_t offset = pos_to_offset(col, row);
     TEXT_VRAM[offset] = value;
@@ -104,9 +103,7 @@ void vga_scroll_text(uint8_t clearchar, uint8_t clearattr, int rows) {
 }
 
 void vga_set_cursor(uint8_t col, uint8_t row) {
-    if (!pos_in_range(col, row)) {
-        return;
-    }
+    assert(pos_in_range(col, row));
 
     uint16_t offset = (uint16_t) row * (uint16_t) vga_get_width_chars() + col;
 

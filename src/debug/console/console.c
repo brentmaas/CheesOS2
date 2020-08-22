@@ -52,7 +52,7 @@ static struct {
     uint8_t col;
     uint8_t row;
     uint8_t attr;
-} CONSOLE_STATE;
+} CONSOLE_STATE = {};
 
 void console_init(void) {
     vga_set_videomode(&VGA_VIDEOMODE_640x480, VGA_MODE_TEXT);

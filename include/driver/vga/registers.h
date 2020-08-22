@@ -2,6 +2,7 @@
 #define _CHEESOS2_DRIVER_VGA_REGISTERS_H
 
 #include <stdint.h>
+#include "debug/assert.h"
 
 // Graphics registers
 enum vga_grc_index {
@@ -88,7 +89,7 @@ static volatile uint8_t* vga_memory_map_ptr(enum vga_memory_map map) {
             return (volatile uint8_t*) 0xB8000;
     }
 
-    __builtin_unreachable();
+    unreachable();
 }
 
 struct __attribute__((packed)) vga_grc_misc {
