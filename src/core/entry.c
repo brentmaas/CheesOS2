@@ -44,10 +44,6 @@ void kernel_main(const struct multiboot_info* multiboot) {
     }));
 
     log_set_sink(sink_serial, NULL);
-    log_info("Initializing console");
-    console_init();
-
-    log_set_sink(sink_serial_and_console, NULL);
 
     log_info("Initializing GDT");
     gdt_init();
@@ -55,9 +51,14 @@ void kernel_main(const struct multiboot_info* multiboot) {
     log_info("Initializing IDT");
     idt_init();
     pic_remap(0x20, 0x28);
-    pic_set_mask(0xFFFF);
+    pic_set_mask(0xFEF9);
     ps2_device_register_interrupts(0x21, 0x2C);
     idt_enable();
+
+    log_info("Initializing console");
+    console_init();
+
+    log_set_sink(sink_serial_and_console, NULL);
 
     if (multiboot->flags & MULTIBOOT_FLAG_BOOT_LOADER_NAME) {
         log_info("Booted from %s", multiboot->boot_loader_name);

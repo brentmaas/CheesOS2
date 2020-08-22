@@ -19,6 +19,7 @@ enum ps2_device_type {
 };
 
 void ps2_device_register_interrupts(uint8_t, uint8_t);
+void ps2_device_reset(enum ps2_device_id);
 enum ps2_device_type ps2_device_identify(enum ps2_device_id);
 
 #endif

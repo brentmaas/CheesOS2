@@ -6,5 +6,7 @@
 #include <stdbool.h>
 
 int ps2_controller_init(void);
+void ps2_controller_wait_output(void);
+bool ps2_controller_has_input(void);
 
 #endif

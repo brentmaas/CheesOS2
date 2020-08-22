@@ -1,6 +1,7 @@
 #include "ps2/controller.h"
 #include "ps2/device.h"
 #include "core/io.h"
+#include "debug/log.h"
 
 #define PS2_COMMAND_PORT (0x64)
 #define PS2_DATA_PORT (0x60)
@@ -46,12 +47,16 @@ enum ps2_response_type {
 enum ps2_device_type ps2_port1_device = PS2_DEVICE_TYPE_DISABLED;
 enum ps2_device_type ps2_port2_device = PS2_DEVICE_TYPE_DISABLED;
 
+bool ps2_controller_has_input(void) {
+    return io_in8(PS2_COMMAND_PORT) & PS2_STATUS_OUTPUT;
+}
+
 void ps2_controller_wait_output(void) {
     while(io_in8(PS2_COMMAND_PORT) & PS2_STATUS_INPUT); // Input buffer status bit must be 0
 }
 
 void ps2_controller_wait_input(void) {
-    while(!(io_in8(PS2_COMMAND_PORT) & PS2_STATUS_OUTPUT)); // Output buffer status bit must be 1
+    while(!ps2_controller_has_input()); // Output buffer status bit must be 1
 }
 
 void ps2_clear_output(void) {
@@ -107,21 +112,26 @@ int ps2_controller_init(void) {
     ps2_clear_output();
 
     uint8_t ps2_config_byte = ps2_read_config_byte();
+    log_debug("PS/2 config byte: %X", (unsigned)ps2_config_byte);
     bool is_dual_port = ps2_config_byte & PS2_CONFIG_SECOND_CLOCK;
+    //log_debug("Dual port: %d", (int)is_dual_port);
     ps2_config_byte &= ~(PS2_CONFIG_FIRST_INTERRUPT | PS2_CONFIG_SECOND_INTERRUPT | PS2_CONFIG_FIRST_TRANSLATE);
+    log_debug("Writing config byte %X", (unsigned)ps2_config_byte);
     ps2_write_config_byte(ps2_config_byte);
 
     ps2_controller_send(PS2_COMMAND_SELF_TEST);
     uint8_t response = ps2_controller_read();
+    //log_debug("Self test resonse: %X", (unsigned)response);
     if(response != PS2_RESPONSE_SELF_TEST_OK)
         return -1;
     ps2_write_config_byte(ps2_config_byte);
 
     if(is_dual_port) {
         ps2_controller_send(PS2_COMMAND_ENABLE_SECOND);
-        ps2_config_byte = ps2_read_config_byte();
+        uint8_t ps2_config_byte2 = ps2_read_config_byte();
+        log_debug("Config byte after second controller: %X", (unsigned)ps2_config_byte2);
 
-        is_dual_port = !(ps2_config_byte & PS2_CONFIG_SECOND_CLOCK);
+        is_dual_port = !(ps2_config_byte2 & PS2_CONFIG_SECOND_CLOCK);
 
         if(is_dual_port) {
             ps2_controller_send(PS2_COMMAND_DISABLE_SECOND);
@@ -130,20 +140,40 @@ int ps2_controller_init(void) {
 
     ps2_controller_send(PS2_COMMAND_TEST_FIRST);
     bool first_good = !ps2_controller_read();
+    log_debug("First device test: %d", (int)first_good);
 
     bool second_good = false;
     if(is_dual_port) {
         ps2_controller_send(PS2_COMMAND_TEST_SECOND);
         second_good = !ps2_controller_read();
     }
+    log_debug("Second device test: %d", (int)second_good);
+
+    if(first_good || second_good) {
+        if(first_good)
+            ps2_config_byte |= PS2_CONFIG_FIRST_INTERRUPT;
+        if(second_good)
+            ps2_config_byte |= PS2_CONFIG_SECOND_INTERRUPT;
+        log_debug("Writing config byte: %X", ps2_config_byte);
+        ps2_write_config_byte(ps2_config_byte);
+    }
+
+    if(first_good)
+        ps2_controller_send(PS2_COMMAND_ENABLE_FIRST);
+    if(second_good)
+        ps2_controller_send(PS2_COMMAND_ENABLE_SECOND);
+
+    log_debug("Initializing first controller");
 
     if(first_good) {
-        ps2_controller_send(PS2_COMMAND_ENABLE_FIRST);
+        ps2_device_reset(PS2_DEVICE_FIRST);
         ps2_port1_device = ps2_device_identify(PS2_DEVICE_FIRST);
     }
 
+    log_debug("Initializing second controller");
+
     if(second_good) {
-        ps2_controller_send(PS2_COMMAND_ENABLE_SECOND);
+        ps2_device_reset(PS2_DEVICE_SECOND);
         ps2_port2_device = ps2_device_identify(PS2_DEVICE_SECOND);
     }
 
