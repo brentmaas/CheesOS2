@@ -60,6 +60,11 @@ void kernel_main(const struct multiboot_info* multiboot) {
 
     log_set_sink(sink_serial_and_console, NULL);
 
+    if (ps2_controller_init()) {
+        log_error("PS2 initialization failed");
+        return;
+    }
+
     if (multiboot->flags & MULTIBOOT_FLAG_BOOT_LOADER_NAME) {
         log_info("Booted from %s", multiboot->boot_loader_name);
     }
@@ -80,10 +85,7 @@ void kernel_main(const struct multiboot_info* multiboot) {
     log_info("Mem lower: %p", (uintptr_t) multiboot->mem_lower * 1000);
     log_info("Mem upper: %p", (uintptr_t) multiboot->mem_upper * 1000);
 
-    if (ps2_controller_init()) {
-        log_error("PS2 initialization failed");
-        return;
-    }
+    
 
     console_print("OPPERPYTHON\n");
     console_set_attr(VGA_ATTR_GREEN, VGA_ATTR_RED);
