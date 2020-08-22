@@ -7,13 +7,11 @@
 #include "interrupt/pic.h"
 
 #include "driver/vga/text.h"
-
 #include "driver/serial/serial.h"
 
 #include "ps2/controller.h"
 
 #include "debug/log.h"
-#include "debug/assert.h"
 #include "debug/console/console.h"
 #include "debug/console/shell.h"
 

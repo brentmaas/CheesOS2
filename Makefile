@@ -12,15 +12,15 @@ ASM := nasm
 ASMFLAGS += -felf32
 
 LDFLAGS += -T $(LINKER)/kernel.ld -ffreestanding -nostdlib -flto
-COMMON_FLAGS += \
+
+CFLAGS += \
 	-g \
+	-O2 \
 	-I$(INCLUDE) \
 	-I$(INCLUDE)/libc \
 	-I$(BUILD)/gen \
 	-ffreestanding \
-	-nostdlib
-
-CFLAGS += $(COMMON_FLAGS) \
+	-nostdlib \
 	-std=gnu11 \
 	-Wall \
 	-Wextra \

@@ -146,6 +146,8 @@ static uint8_t pitch(const struct vga_videomode* vidmode, enum vga_mode mode, en
             planes = 4;
             bits_per_pixel = 8;
             break;
+        default:
+            unreachable();
     }
 
     uint8_t memory_address_size = VGA_ADDRESS_MODE_SIZE(address_mode);

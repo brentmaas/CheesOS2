@@ -35,14 +35,12 @@ void console_shell_loop(void) {
             if (strlen(input) > 5) {
                 const char* to_print = input + 5;
                 console_print(to_print); // Envvars komt later wel(TM)
-            } else {
                 console_print("\n");
             }
         } else if (is_command(input, "oef")) {
             console_print("Jij hebt aids\n");
         } else {
             console_printf("Unknown command: %s\n", input);
-            console_print("\n");
         }
     }
 }
