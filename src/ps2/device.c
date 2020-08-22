@@ -15,7 +15,7 @@
 enum ps2_device_command_type {
     PS2_DEVICE_COMMAND_NONE = 0,
     PS2_DEVICE_COMMAND_DISABLE_SCAN = 0xF5,
-    PS2_DEVICE_COMMAND_IDENTIFY = 0xFA,
+    PS2_DEVICE_COMMAND_IDENTIFY = 0xF2,
     PS2_DEVICE_COMMAND_RESET = 0xFF
 };
 
@@ -67,6 +67,8 @@ void ps2_device_handle_interrupt(volatile enum ps2_device_state* state) {
             break;
         case PS2_STATE_ID_READ:
             log_debug("Read id byte: %x", (unsigned)data);
+            if(data != 0x83)
+                *state = PS2_STATE_INITIAL;
             break;
         case PS2_STATE_FAIL:
             break;
