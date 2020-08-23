@@ -3,9 +3,24 @@
 
 #include <stdint.h>
 
-#define PAGE_SIZE (0x1000)
-#define PAGE_DIR_ENTRY_COUNT (1024)
-#define PAGE_TABLE_ENTRY_COUNT (1024)
+#include "memory/align.h"
+
+#define PAGE_DIR_ENTRY_BITS (10u)
+#define PAGE_TABLE_ENTRY_BITS (10u)
+#define PAGE_OFFSET_BITS (12u)
+
+#define PAGE_DIR_ENTRY_COUNT (1 << PAGE_DIR_ENTRY_BITS)
+#define PAGE_TABLE_ENTRY_COUNT (1 << PAGE_TABLE_ENTRY_BITS)
+#define PAGE_SIZE (1 << PAGE_OFFSET_BITS)
+
+#define PAGE_DIR_ENTRY(addr) (((addr) >> (PAGE_OFFSET_BITS + PAGE_TABLE_ENTRY_BITS)) & (PAGE_DIR_ENTRY_COUNT - 1))
+#define PAGE_TABLE_ENTRY(addr) (((addr) >> PAGE_OFFSET_BITS) & (PAGE_TABLE_ENTRY_COUNT - 1))
+#define PAGE_OFFSET(addr) ((addr) & (PAGE_SIZE - 1))
+
+#define PAGE_ALIGN_BACKWARD(addr) (ALIGN_BACKWARD_2POW((addr), PAGE_SIZE))
+#define PAGE_ALIGN_FORWARD(addr) (ALIGN_FORWARD_2POW((addr), PAGE_SIZE))
+
+#define IS_PAGE_ALIGNED(addr) ((addr) % PAGE_SIZE == 0)
 
 struct __attribute__((packed)) page_dir_entry {
     uint8_t present : 1;
