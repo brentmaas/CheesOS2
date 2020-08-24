@@ -58,7 +58,7 @@ void gdt_init(void) {
         GDT_ACCESS_PRESENT | GDT_ACCESS_PRIVILEGE_3 | GDT_ACCESS_SYSTEM | GDT_ACCESS_EXECUTE | GDT_ACCESS_RW
     );
 
-    //Selector 0x20, code segment user level
+    //Selector 0x20, data segment user level
     gdt_load_entry(&entries[4],
         0,
         0xFFFFFu,
@@ -78,6 +78,7 @@ void gdt_init(void) {
     descriptor.addr = entries;
 
     gdt_load(&descriptor);
+
     gdt_load_task_register(0x28);
 }
 

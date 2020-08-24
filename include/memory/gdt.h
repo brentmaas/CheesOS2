@@ -2,6 +2,7 @@
 #define _CHEESOS2_INCLUDE_MEMORY_GDT_H
 
 #include <stdint.h>
+#include <stdnoreturn.h>
 
 struct __attribute__((packed)) gdt_descriptor {
     uint16_t size;
@@ -74,5 +75,7 @@ void gdt_init(void);
 
 // Set the stack used on the next interrupt
 void gdt_set_int_stack(void* new_stack);
+
+extern noreturn void gdt_jump_to_usermode(void* user_code, void* user_stack);
 
 #endif

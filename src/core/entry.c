@@ -2,6 +2,7 @@
 #include <stddef.h>
 
 #include "core/multiboot.h"
+#include "core/panic.h"
 #include "interrupt/idt.h"
 #include "interrupt/pic.h"
 
@@ -36,6 +37,18 @@ static void sink_serial_and_console(void* context, enum log_level level, const c
     console_log_sink(NULL, level, file, line, format, args);
 }
 
+static void syscall_handler(uint32_t interrupt, struct interrupt_registers* registers, struct interrupt_parameters* parameters) {
+    log_info("Syscall interrupt");
+}
+
+static void test_usermode() {
+    asm volatile ("int $0x42");
+
+    while (true) {
+        asm volatile ("inc %%eax" : : : "eax");
+    }
+}
+
 void kernel_main(const struct multiboot_info* multiboot) {
     serial_init(SERIAL_PORT_1, ((struct serial_init_info) {
         .data_size = SERIAL_DATA_SIZE_8_BITS,
@@ -55,6 +68,7 @@ void kernel_main(const struct multiboot_info* multiboot) {
     pic_remap(0x20, 0x28);
     pic_set_mask(0xFEF9);
     ps2_device_register_interrupts(0x21, 0x2C);
+    gdt_set_int_stack((void*) 0x00200000);
     idt_enable();
 
     log_info("Initializing console");
@@ -62,10 +76,10 @@ void kernel_main(const struct multiboot_info* multiboot) {
 
     log_set_sink(sink_serial_and_console, NULL);
 
-    if (ps2_controller_init()) {
-        log_error("PS2 initialization failed");
-        return;
-    }
+    // if (ps2_controller_init()) {
+    //     log_error("PS2 initialization failed");
+    //     return;
+    // }
 
     if (multiboot->flags & MULTIBOOT_FLAG_BOOT_LOADER_NAME) {
         log_info("Booted from %s", multiboot->boot_loader_name);
@@ -87,5 +101,10 @@ void kernel_main(const struct multiboot_info* multiboot) {
     console_print("\x90\x91\x91\x91\x91\x91\x91\x91\x91\x92\n");
     console_set_attr(VGA_ATTR_WHITE, VGA_ATTR_BLACK);
 
-    //console_shell_loop();
+
+    idt_disable();
+    idt_make_interrupt_no_status(0x42, syscall_handler, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_3 | IDT_FLAG_PRESENT);
+    idt_enable();
+    log_info("Jumping to usercode at %p", (void*) test_usermode);
+    gdt_jump_to_usermode((void*) test_usermode, (void*) 0x00300000);
 }
