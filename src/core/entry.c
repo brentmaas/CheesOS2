@@ -42,7 +42,7 @@ static void syscall_handler(uint32_t interrupt, struct interrupt_registers* regi
 }
 
 static void test_usermode() {
-    asm volatile ("int $0x42");
+    asm volatile ("int $'B'");
 
     while (true) {
         asm volatile ("inc %%eax" : : : "eax");
@@ -101,9 +101,8 @@ void kernel_main(const struct multiboot_info* multiboot) {
     console_print("\x90\x91\x91\x91\x91\x91\x91\x91\x91\x92\n");
     console_set_attr(VGA_ATTR_WHITE, VGA_ATTR_BLACK);
 
-
     idt_disable();
-    idt_make_interrupt_no_status(0x42, syscall_handler, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_3 | IDT_FLAG_PRESENT);
+    idt_make_interrupt_no_status('B', syscall_handler, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_3 | IDT_FLAG_PRESENT);
     idt_enable();
     log_info("Jumping to usercode at %p", (void*) test_usermode);
     gdt_jump_to_usermode((void*) test_usermode, (void*) 0x00300000);
