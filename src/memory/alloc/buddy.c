@@ -13,7 +13,6 @@
 static size_t bits_requires_for_order(size_t num_pages, size_t order) {
     // Floor division, as there is no allocation information required
     // for partial pages.
-
     return num_pages / (1 << order);
 }
 

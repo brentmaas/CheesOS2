@@ -1,10 +1,12 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "memory/gdt.h"
-#include "interrupt/idt.h"
 #include "core/multiboot.h"
+#include "interrupt/idt.h"
 #include "interrupt/pic.h"
+
+#include "memory/gdt.h"
+#include "memory/memory.h"
 
 #include "driver/vga/text.h"
 #include "driver/serial/serial.h"
@@ -72,20 +74,9 @@ void kernel_main(const struct multiboot_info* multiboot) {
         log_info("Booted with command line \"%s\"", multiboot->cmdline);
     }
 
-    uintptr_t entry_cur = (uintptr_t) multiboot->mmap_addr;
-    uintptr_t entry_end = (uintptr_t) multiboot->mmap_addr + multiboot->mmap_length;
-    while (entry_cur < entry_end) {
-        const struct multiboot_mmap_entry* entry = (struct multiboot_mmap_entry*) entry_cur;
-        uint64_t addr = entry->addr;
-        uint64_t size = entry->len;
-        log_info("Memory region: 0x%016llX, %llu KiB, type: %u", addr, size >> 10, entry->type);
-        entry_cur += entry->size + sizeof(entry->size);
-    }
+    memory_init(multiboot);
 
-    log_info("Mem lower: %p", (uintptr_t) multiboot->mem_lower * 1000);
-    log_info("Mem upper: %p", (uintptr_t) multiboot->mem_upper * 1000);
-
-    
+    log_info("Initialization finished");
 
     console_print("OPPERPYTHON\n");
     console_set_attr(VGA_ATTR_GREEN, VGA_ATTR_RED);
