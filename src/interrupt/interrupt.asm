@@ -8,6 +8,8 @@ GLOBAL idt_create_handler_table
 
 SECTION .text
 
+REGISTERS_STRUCT_SIZE equ 12 * 4
+
 idt_load:
     mov eax, [esp+4]
     lidt [eax]
@@ -21,65 +23,121 @@ idt_disable:
     cli
     ret
 
-%macro interrupt_no_status 1
-interrupt_handler_%1:
-    ; Save registers
+interrupt_handler_no_status:
+    ; Save data segments
+    ; cs and ss are handled by the cpu
+    push gs
+    push fs
+    push es
+    push ds
+
+    ; save registers
     pusha
 
-    ; Fetch syscall parameters
-    lea edx, [esp+32]
+    ; Restore kernel data segments
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    ; Fetch interrupt parameters
+    lea edx, [esp + REGISTERS_STRUCT_SIZE + 4]
+    ; Fetch interrupt number
+    mov ecx, [esp + REGISTERS_STRUCT_SIZE]
     ; Fetch registers
     mov eax, esp
 
-    ; Push syscall parameters as argument
+    ; Push handler parameters: interrupt number, registers,
+    ; interrupt parameters (in reverse order)
     push edx
-    ; Push registers
     push eax
-    ; Push interrupt number
-    push DWORD %1
+    push ecx
 
-    ; Call handler
-    call [idt_callback_routines+4*%1]
+    call [idt_callback_routines + 4 * ecx]
 
-    ; Restore stack and registers
+    ; Restore stack
     add esp, 12
+
+    ; Restore registers
     popa
+
+    ; Restore segments
+    pop ds
+    pop es
+    pop fs
+    pop gs
+
+    ; Pop interrupt number
+    add esp, 4
 
     ; Return from interrupt handler
     iret
 
+interrupt_handler_status:
+    ; Save data segments
+    ; cs and ss are handled by the cpu
+    push gs
+    push fs
+    push es
+    push ds
+
+    ; save registers
+    pusha
+
+    ; Restore kernel data segments
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    ; Fetch interrupt parameters
+    lea edx, [esp + REGISTERS_STRUCT_SIZE + 4 + 4]
+    ; Fetch status code
+    mov esi, [esp + REGISTERS_STRUCT_SIZE + 4]
+    ; Fetch interrupt number
+    mov ecx, [esp + REGISTERS_STRUCT_SIZE]
+    ; Fetch registers
+    mov eax, esp
+
+    ; Push handler parameters: interrupt number, registers,
+    ; interrupt parameters, status code (in reverse order)
+    push esi
+    push edx
+    push eax
+    push ecx
+
+    call [idt_callback_routines + 4 * ecx]
+
+    ; Restore stack
+    add esp, 16
+
+    ; Restore registers
+    popa
+
+    ; Restore segments
+    pop ds
+    pop es
+    pop fs
+    pop gs
+
+    ; Pop interrupt number and error code
+    add esp, 8
+
+    ; Return from interrupt handler
+    iret
+
+%macro interrupt_no_status 1
+interrupt_handler_%1:
+    push %1
+    jmp interrupt_handler_no_status
 %endmacro
 
 %macro interrupt_status 1
 interrupt_handler_%1:
-    ; Save registers
-    pusha
-
-    ; Fetch syscall parameters
-    lea eax, [esp+36]
-    ; Fetch registers
-    mov edx, esp
-    ; Fetch status code
-    mov ecx, [esp+32]
-
-    ; Push status code
-    push ecx
-    ; Push syscall parameters as argument
-    push eax
-    ; Push registers
-    push edx
-    ; Push interrupt number
-    push DWORD %1
-
-    ; Call handler
-    call [idt_callback_routines+4*%1]
-
-    ; Restore stack and registers
-    add esp, 16
-    popa
-
-    ; Return from interrupt handler
-    iret
+    push %1
+    jmp interrupt_handler_status
 %endmacro
 
 %macro load_interrupt_location 1

@@ -5,7 +5,7 @@ LINKER := linker
 BUILD := build
 RES := res
 
-CC := i486-elf-gcc
+CC := i486-unknown-elf-gcc
 LD := $(CC)
 
 ASM := nasm

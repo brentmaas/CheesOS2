@@ -5,7 +5,6 @@ static struct idt_descriptor descriptor;
 static struct idt_entry entries[256];
 
 void* idt_callback_routines[256];
-
 void* idt_hardware_callbacks[256];
 
 extern void idt_create_handler_table(void* table);

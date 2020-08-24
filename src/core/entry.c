@@ -38,7 +38,12 @@ static void sink_serial_and_console(void* context, enum log_level level, const c
 }
 
 static void syscall_handler(uint32_t interrupt, struct interrupt_registers* registers, struct interrupt_parameters* parameters) {
-    log_info("Syscall interrupt");
+    uint16_t ds, cs, ss;
+    asm volatile ("mov %%ds, %%ax\nmov %%ax, %0" : "=r"(ds) : : "ax");
+    asm volatile ("mov %%cs, %%ax\nmov %%ax, %0" : "=r"(cs) : : "ax");
+    asm volatile ("mov %%ss, %%ax\nmov %%ax, %0" : "=r"(ss) : : "ax");
+
+    log_info("Syscall interrupt: ds = 0x%X, cs = 0x%X, ss = 0x%X", ds, cs, ss);
 }
 
 static void test_usermode() {
