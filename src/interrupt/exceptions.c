@@ -31,17 +31,21 @@ const char* INTERRUPT_NAMES[] = {
 
 void idt_exception_dump_registers(struct interrupt_registers* registers, struct interrupt_parameters* parameters) {
     log_debug("Register dump:\n"
-        "EAX = 0x%08x\tECX = 0x%08x\n"
-        "EDX = 0x%08x\tEBX = 0x%08x\n"
-        "ESP = 0x%08x\tEBP = 0x%08x\n"
-        "ESI = 0x%08x\tEDI = 0x%08x\n"
+        "EAX = 0x%08X\tECX = 0x%08X\n"
+        "EDX = 0x%08X\tEBX = 0x%08X\n"
+        "ESP = 0x%08X\tEBP = 0x%08X\n"
+        "ESI = 0x%08X\tEDI = 0x%08X\n"
+        "DS = 0x%04X\t\t\tES = 0x%04X\n"
+        "FS = 0x%04X\t\t\tGS = 0x%04X\n"
         "\n"
-        "EIP = 0x%08x\tCS = 0x%04x\n"
-        "EFLAGS = 0x%08x\n",
+        "EIP = 0x%08X\tCS = 0x%04X\n"
+        "EFLAGS = 0x%08X\n",
         registers->eax, registers->ecx,
         registers->edx, registers->ebx,
         registers->esp, registers->ebp,
         registers->esi, registers->edi,
+        registers->ds, registers->es,
+        registers->fs, registers->gs,
         parameters->eip, (uint32_t)parameters->cs,
         parameters->eflags
     );
