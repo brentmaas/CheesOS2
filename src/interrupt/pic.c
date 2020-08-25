@@ -43,7 +43,7 @@ void pic_remap(uint8_t master, uint8_t slave) {
 
 void pic_set_mask(uint16_t mask) {
     uint8_t master_mask = mask & 0xFF;
-    uint8_t slave_mask = mask & 0xFF00 >> 8;
+    uint8_t slave_mask = (mask & 0xFF00) >> 8;
 
     io_out8(PIC_MASTER_DATA_PORT, master_mask);
     io_out8(PIC_SLAVE_DATA_PORT, slave_mask);

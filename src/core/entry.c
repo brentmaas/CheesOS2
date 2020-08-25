@@ -71,7 +71,7 @@ void kernel_main(const struct multiboot_info* multiboot) {
     log_info("Initializing IDT");
     idt_init();
     pic_remap(0x20, 0x28);
-    pic_set_mask(0xFEF9);
+    pic_set_mask(0xEFF9);
     ps2_device_register_interrupts(0x21, 0x2C);
     gdt_set_int_stack((void*) 0x00200000);
     idt_enable();
@@ -81,10 +81,10 @@ void kernel_main(const struct multiboot_info* multiboot) {
 
     log_set_sink(sink_serial_and_console, NULL);
 
-    // if (ps2_controller_init()) {
-    //     log_error("PS2 initialization failed");
-    //     return;
-    // }
+    if (ps2_controller_init()) {
+        log_error("PS2 initialization failed");
+        return;
+    }
 
     if (multiboot->flags & MULTIBOOT_FLAG_BOOT_LOADER_NAME) {
         log_info("Booted from %s", multiboot->boot_loader_name);
