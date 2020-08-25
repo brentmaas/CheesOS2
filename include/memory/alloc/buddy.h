@@ -38,7 +38,8 @@ struct buddy_allocator {
 };
 
 void buddy_init(struct buddy_allocator* buddy, void* base, size_t len);
-void* buddy_alloc_pages(struct buddy_allocator* buddy, size_t order);
+void* buddy_alloc_pages(struct buddy_allocator* buddy, size_t pages);
+void* buddy_alloc_order(struct buddy_allocator* buddy, size_t order);
 void buddy_free_pages(struct buddy_allocator* buddy, void* block);
 void buddy_dump_stats(const struct buddy_allocator* buddy);
 

@@ -5,7 +5,7 @@ CR0_ENABLE_PAGING_BIT equ 1 << 31
 GLOBAL paging_enable
 GLOBAL paging_disable
 GLOBAL paging_invalidate_tlb
-GLOBAL paging_invalidate_tlb_entry
+GLOBAL paging_invalidate_address
 GLOBAL paging_load_directory
 
 SECTION .text
@@ -27,7 +27,7 @@ paging_invalidate_tlb:
     mov cr3, eax
     ret
 
-paging_invalidate_tlb_entry:
+paging_invalidate_address:
     mov eax, [esp + 4]
     invlpg [eax]
     ret

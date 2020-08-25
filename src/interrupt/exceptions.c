@@ -58,32 +58,38 @@ void idt_exception_no_status(uint32_t interrupt, struct interrupt_registers* reg
 }
 
 void idt_exception_status(uint32_t interrupt, struct interrupt_registers* registers, struct interrupt_parameters* parameters, uint32_t status) {
-    log_error("Hardware exception %u (%s); status = %u", interrupt, INTERRUPT_NAMES[interrupt], status);
+    log_error("Hardware exception %u (%s); status = %u (0x%X)", interrupt, INTERRUPT_NAMES[interrupt], status, status);
+    if (interrupt == 14) {
+        uint32_t cr2;
+        asm volatile ("mov %%cr2, %0" : "=r"(cr2));
+        log_error("While accessing virtual address %p", cr2);
+    }
+
     idt_exception_dump_registers(registers, parameters);
     kernel_panic();
 }
 
 void idt_exceptions_load(void) {
-    idt_make_interrupt_no_status(0, idt_exception_no_status, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Divide by zero
+    idt_make_interrupt_no_status(0, idt_exception_no_status, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Divide by zero
     //TODO: Debug
     //TODO: Non-maskable interrupt
-    idt_make_interrupt_no_status(3, idt_exception_no_status, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_3 | IDT_FLAG_PRESENT); //Breakpoint
-    idt_make_interrupt_no_status(4, idt_exception_no_status, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Overflow
-    idt_make_interrupt_no_status(5, idt_exception_no_status, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Bound Range Exceeded
-    idt_make_interrupt_no_status(6, idt_exception_no_status, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Invalid Opcode
-    idt_make_interrupt_no_status(7, idt_exception_no_status, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Device Not Availlable
-    idt_make_interrupt_status(8, idt_exception_status, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Double Fault
-    idt_make_interrupt_no_status(9, idt_exception_no_status, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Coprocessor Segment Overrun
-    idt_make_interrupt_status(10, idt_exception_status, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Invalid TSS
-    idt_make_interrupt_status(11, idt_exception_status, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Segment Not Present
-    idt_make_interrupt_status(12, idt_exception_status, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Stack-Segment Fault
-    idt_make_interrupt_status(13, idt_exception_status, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //General Protection Fault
-    idt_make_interrupt_status(14, idt_exception_status, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Page Fault
+    idt_make_interrupt_no_status(3, idt_exception_no_status, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_3 | IDT_FLAG_PRESENT); //Breakpoint
+    idt_make_interrupt_no_status(4, idt_exception_no_status, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Overflow
+    idt_make_interrupt_no_status(5, idt_exception_no_status, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Bound Range Exceeded
+    idt_make_interrupt_no_status(6, idt_exception_no_status, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Invalid Opcode
+    idt_make_interrupt_no_status(7, idt_exception_no_status, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Device Not Availlable
+    idt_make_interrupt_status(8, idt_exception_status, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Double Fault
+    idt_make_interrupt_no_status(9, idt_exception_no_status, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Coprocessor Segment Overrun
+    idt_make_interrupt_status(10, idt_exception_status, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Invalid TSS
+    idt_make_interrupt_status(11, idt_exception_status, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Segment Not Present
+    idt_make_interrupt_status(12, idt_exception_status, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Stack-Segment Fault
+    idt_make_interrupt_status(13, idt_exception_status, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //General Protection Fault
+    idt_make_interrupt_status(14, idt_exception_status, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Page Fault
     //TODO: Reserved
-    idt_make_interrupt_no_status(16, idt_exception_no_status, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //x87 FPU Exception
-    idt_make_interrupt_status(17, idt_exception_status, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Alignment Check
-    idt_make_interrupt_no_status(18, idt_exception_no_status, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Machine Check
+    idt_make_interrupt_no_status(16, idt_exception_no_status, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //x87 FPU Exception
+    idt_make_interrupt_status(17, idt_exception_status, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Alignment Check
+    idt_make_interrupt_no_status(18, idt_exception_no_status, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Machine Check
     //TODO: SIMD Floating-Point Exception
     //TODO: Virtualization Exception
-    idt_make_interrupt_no_status(21, idt_exception_no_status, IDT_GATE_TYPE_TRAP_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Reserved
+    idt_make_interrupt_no_status(21, idt_exception_no_status, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_0 | IDT_FLAG_PRESENT); //Reserved
 }

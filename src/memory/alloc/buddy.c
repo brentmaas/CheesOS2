@@ -13,7 +13,7 @@
 static size_t bits_requires_for_order(size_t num_pages, size_t order) {
     // Floor division, as there is no allocation information required
     // for partial pages.
-    return num_pages / (1 << order);
+    return num_pages / (1UL << order);
 }
 
 static size_t bytes_requires_for_order(size_t num_pages, size_t order) {
@@ -44,7 +44,7 @@ static bool bitmap_get(const uint8_t* bitmap, size_t index) {
 }
 
 static void buddy_push_free_page(struct buddy_allocator* buddy, size_t order, struct buddy_free_page* new_head) {
-    assert(IS_ALIGNED_TO((uintptr_t) new_head - buddy->first_allocatable_page, (1 << order) * PAGE_SIZE));
+    assert(IS_ALIGNED_TO((uintptr_t) new_head - buddy->first_allocatable_page, (1UL << order) * PAGE_SIZE));
 
     struct buddy_free_page* old_head = buddy->orders[order].head;
     assert(!old_head || !old_head->prev);
@@ -140,7 +140,7 @@ void buddy_init(struct buddy_allocator* buddy, void* base, size_t len) {
     size_t order = BUDDY_ORDERS;
     while (order > 0) {
         --order;
-        size_t order_pages = 1 << order;
+        size_t order_pages = 1UL << order;
         size_t n_registered = 0;
         while (page_index + order_pages <= buddy->num_allocatable_pages) {
             uintptr_t block_addr = buddy->first_allocatable_page + page_index * PAGE_SIZE;
@@ -152,7 +152,7 @@ void buddy_init(struct buddy_allocator* buddy, void* base, size_t len) {
 }
 
 static uintptr_t buddy_block_index(struct buddy_allocator* buddy, size_t order, void* block) {
-    uintptr_t block_bytes = (1 << order) * PAGE_SIZE;
+    uintptr_t block_bytes = (1UL << order) * PAGE_SIZE;
     uintptr_t block_index = ((uintptr_t) block - buddy->first_allocatable_page) / block_bytes;
     assert(block_bytes * block_index + buddy->first_allocatable_page == (uintptr_t) block);
     return block_index;
@@ -187,11 +187,11 @@ static void* buddy_alloc_from_order(struct buddy_allocator* buddy, size_t order)
 
 // Returns and marks the first block as allocated, and adds the second block to the
 // free list of one order smaller. The returned block is also an order smaller.
-void* buddy_split(struct buddy_allocator* buddy, void* block, size_t order) {
+static void* buddy_split(struct buddy_allocator* buddy, void* block, size_t order) {
     assert(order >= 1);
     size_t child_order = order - 1;
 
-    size_t child_block_pages = 1 << child_order;
+    size_t child_block_pages = 1UL << child_order;
     size_t child_block_bytes = child_block_pages * PAGE_SIZE;
 
     void* first = block;
@@ -205,7 +205,17 @@ void* buddy_split(struct buddy_allocator* buddy, void* block, size_t order) {
     return first;
 }
 
-void* buddy_alloc_pages(struct buddy_allocator* buddy, size_t order) {
+void* buddy_alloc_pages(struct buddy_allocator* buddy, size_t pages) {
+    for (size_t order = 0; order < BUDDY_ORDERS; ++order) {
+        if (pages <= (1UL << order)) {
+            return buddy_alloc_order(buddy, order);
+        }
+    }
+
+    return NULL;
+}
+
+void* buddy_alloc_order(struct buddy_allocator* buddy, size_t order) {
     assert(order < BUDDY_ORDERS);
 
     void* block;
@@ -227,7 +237,7 @@ void* buddy_alloc_pages(struct buddy_allocator* buddy, size_t order) {
         --block_order;
     }
 
-    memset(block, 0, (1 << order) * PAGE_SIZE);
+    memset(block, 0, (1UL << order) * PAGE_SIZE);
     return block;
 }
 
@@ -258,7 +268,7 @@ void buddy_free_pages(struct buddy_allocator* buddy, void* block) {
             break;
         }
 
-        size_t block_bytes = (1 << order) * PAGE_SIZE;
+        size_t block_bytes = (1UL << order) * PAGE_SIZE;
 
         uintptr_t block_index = buddy_block_index(buddy, order, block);
         uintptr_t buddy_block_index = block_index ^ 1;
@@ -290,6 +300,8 @@ void buddy_free_pages(struct buddy_allocator* buddy, void* block) {
 }
 
 void buddy_dump_stats(const struct buddy_allocator* buddy) {
+    log_debug("Allocator free list state:");
+    size_t total_pages = 0;
     for (size_t i = 0; i < BUDDY_ORDERS; ++i) {
         struct buddy_free_page* head = buddy->orders[i].head;
         size_t count = 0;
@@ -299,6 +311,20 @@ void buddy_dump_stats(const struct buddy_allocator* buddy) {
             head = head->next;
         }
 
-        log_debug("Order %zu: %zu page(s) in free list\n", i, count);
+        size_t num_pages = count * (1UL << i);
+        total_pages += num_pages;
+
+        log_debug(
+            "Order %zu: %zu block(s) (%zu pages, %zu KiB)",
+            i,
+            count,
+            num_pages,
+            num_pages * PAGE_SIZE / 1024
+        );
     }
+    log_debug(
+        "Total free memory: %zu pages (%zu KiB)",
+        total_pages,
+        total_pages * PAGE_SIZE / 1024
+    );
 }

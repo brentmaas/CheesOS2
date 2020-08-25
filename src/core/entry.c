@@ -38,20 +38,12 @@ static void sink_serial_and_console(void* context, enum log_level level, const c
 }
 
 static void syscall_handler(uint32_t interrupt, struct interrupt_registers* registers, struct interrupt_parameters* parameters) {
-    uint16_t ds, cs, ss;
-    asm volatile ("mov %%ds, %%ax\nmov %%ax, %0" : "=r"(ds) : : "ax");
-    asm volatile ("mov %%cs, %%ax\nmov %%ax, %0" : "=r"(cs) : : "ax");
-    asm volatile ("mov %%ss, %%ax\nmov %%ax, %0" : "=r"(ss) : : "ax");
-
-    log_info("Syscall interrupt: ds = 0x%X, cs = 0x%X, ss = 0x%X", ds, cs, ss);
+    log_info("Syscall interrupt");
 }
 
 static void test_usermode() {
     asm volatile ("int $'B'");
-
-    while (true) {
-        asm volatile ("inc %%eax" : : : "eax");
-    }
+    *(volatile int*)0;
 }
 
 void kernel_main(const struct multiboot_info* multiboot) {
@@ -81,11 +73,6 @@ void kernel_main(const struct multiboot_info* multiboot) {
 
     log_set_sink(sink_serial_and_console, NULL);
 
-    if (ps2_controller_init()) {
-        log_error("PS2 initialization failed");
-        return;
-    }
-
     if (multiboot->flags & MULTIBOOT_FLAG_BOOT_LOADER_NAME) {
         log_info("Booted from %s", multiboot->boot_loader_name);
     }
@@ -93,7 +80,15 @@ void kernel_main(const struct multiboot_info* multiboot) {
         log_info("Booted with command line \"%s\"", multiboot->cmdline);
     }
 
-    memory_init(multiboot);
+    if (ps2_controller_init()) {
+        log_error("PS2 initialization failed");
+        return;
+    }
+
+    if (memory_init(multiboot)) {
+        log_error("Failed to initialize memory");
+        return;
+    }
 
     log_info("Initialization finished");
 
@@ -109,6 +104,7 @@ void kernel_main(const struct multiboot_info* multiboot) {
     idt_disable();
     idt_make_interrupt_no_status('B', syscall_handler, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_3 | IDT_FLAG_PRESENT);
     idt_enable();
+
     log_info("Jumping to usercode at %p", (void*) test_usermode);
     gdt_jump_to_usermode((void*) test_usermode, (void*) 0x00300000);
 }

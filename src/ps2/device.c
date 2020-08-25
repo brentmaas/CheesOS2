@@ -104,10 +104,11 @@ void ps2_device_register_interrupts(uint8_t pic_device_1, uint8_t pic_device_2) 
 }
 
 void ps2_device_send(enum ps2_device_id device, volatile uint8_t* command, size_t command_size) {
-    if(device == PS2_DEVICE_SECOND) {
-        io_out8(PS2_CONTROLLER_PORT, PS2_CONTROLLER_SECOND);
-    }
     for(size_t i = 0; i < command_size; ++i) {
+        if(device == PS2_DEVICE_SECOND) {
+            ps2_controller_wait_output();
+            io_out8(PS2_CONTROLLER_PORT, PS2_CONTROLLER_SECOND);
+        }
         ps2_controller_wait_output();
         io_out8(PS2_DEVICE_PORT, command[i]);
     }
@@ -155,6 +156,19 @@ void ps2_device_reset(enum ps2_device_id device) {
 enum ps2_device_type ps2_device_identify(enum ps2_device_id device) {
     log_debug("Identifying device %u", (unsigned)device);
     ps2_device_send_command(device, PS2_DEVICE_COMMAND_DISABLE_SCAN);
+    if (device == 1) {
+        while (true) {
+            while (true) {
+                if (io_in8(PS2_CONTROLLER_PORT) & 0x1) {
+                    break;
+                }
+            }
+
+            uint8_t data = io_in8(PS2_DEVICE_PORT);
+            log_debug("Device responded with 0x%02X", data);
+        }
+    }
+
     ps2_device_wait_for_response(device);
 
     ps2_device_send_command(device, PS2_DEVICE_COMMAND_IDENTIFY);
