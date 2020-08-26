@@ -31,6 +31,14 @@ const struct vga_dac_color CONSOLE_COLORS[] = {
     [VGA_ATTR_WHITE] = {63, 63, 63}
 };
 
+const struct vga_palette CONSOLE_PALETTE = {
+    .overscan_index = 0,
+    .palette_indices = {
+        0, 1, 2, 3, 4, 5, 6, 7,
+        8, 9, 10, 11, 12, 13, 14, 15
+    }
+};
+
 const enum vga_attr LOG_LEVEL_COLORS[] = {
     [LOG_LEVEL_DEBUG] = VGA_ATTR_GREEN,
     [LOG_LEVEL_INFO] = VGA_ATTR_LIGHT | VGA_ATTR_BLUE,
@@ -57,6 +65,7 @@ static struct {
 void console_init(void) {
     vga_set_videomode(&VGA_VIDEOMODE_640x480, VGA_MODE_TEXT);
     vga_dac_write(0, 16, CONSOLE_COLORS);
+    vga_set_palette(&CONSOLE_PALETTE);
 
     vga_set_fontopts(&CONSOLE_FOPTS);
     vga_upload_font(0, FONT_CHEESOS);
