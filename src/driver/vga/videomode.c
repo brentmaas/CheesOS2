@@ -43,7 +43,7 @@ const enum vga_plane_bits DEFAULT_ENABLED_PLANES[] = {
     [VGA_MODE_GRAPHICS_256_COLOR] = VGA_PLANE_ALL,
 };
 
-static void dump_registers(void) {
+void vga_dump_registers(void) {
     char line[128] = {0};
     char* write_ptr = line;
     size_t size_left = sizeof(line);

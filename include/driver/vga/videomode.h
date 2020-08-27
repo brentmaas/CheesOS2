@@ -49,6 +49,8 @@ struct vga_videomode {
 
 extern const struct vga_videomode VGA_VIDEOMODE_640x480;
 
+void vga_dump_registers(void);
+
 void vga_set_videomode(const struct vga_videomode* vidmode, enum vga_mode mode);
 
 uint16_t vga_get_width_pixels(void);
