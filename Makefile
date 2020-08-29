@@ -65,20 +65,26 @@ $(BUILD)/gen/res/fonts.o: $(FONTS)
 		-H $(BUILD)/gen/res/fonts.h \
 		-I res/fonts.h \
 		$(FONTS)
-	@$(CC) $(CFLAGS) -c -o $(BUILD)/gen/res/fonts.o $(BUILD)/gen/res/fonts.c
+	@$(CC) $(CFLAGS) -c -o $@ $(BUILD)/gen/res/fonts.c
 
 $(BUILD)/gen/res/fonts.h: $(BUILD)/gen/res/fonts.o
+
+$(BUILD)/boot.iso: $(BUILD)/target/$(TARGET) grub.cfg
+	@mkdir -p $(BUILD)/boot-iso-root/boot/grub
+	@cp $(BUILD)/target/$(TARGET) $(BUILD)/boot-iso-root/boot/$(TARGET)
+	@cp grub.cfg $(BUILD)/boot-iso-root/boot/grub/grub.cfg
+	@grub-mkrescue -o $@ $(BUILD)/boot-iso-root/ --install-modules="part_msdos multiboot" 2> /dev/null
 
 clean:
 	@echo Cleaning build files
 	@rm -rf $(BUILD)
 
-run: $(BUILD)/target/$(TARGET)
-	@$(QEMU) $(QEMU_COMMON_FLAGS) -kernel $<
+run: $(BUILD)/boot.iso
+	@$(QEMU) $(QEMU_COMMON_FLAGS) -drive file=$<,index=0,media=disk,format=raw
 
-run-debug: $(BUILD)/target/$(TARGET)
-	@$(QEMU) $(QEMU_DEBUG_FLAGS) -kernel $<
+run-debug: $(BUILD)/boot.iso
+	@$(QEMU) $(QEMU_DEBUG_FLAGS) -drive file=$<,index=0,media=disk,format=raw
 
 -include $(call find, $(BUILD)/, "*.d")
 
-.PHONY: clean
+.PHONY: clean run run-debug
