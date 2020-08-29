@@ -1,10 +1,14 @@
 #include "core/panic.h"
 
+#include <stdbool.h>
+
 noreturn void kernel_panic(void) {
-    asm volatile (
-        "cli\n"
-        "hlt\n"
-    );
+    while (true) {
+        asm volatile (
+            "cli\n"
+            "hlt\n"
+        );
+    }
 
     // Cannot use `unreachable()` from debug/assert.h
     // kernel_panic is called by this.
