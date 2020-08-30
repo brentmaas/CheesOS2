@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "core/multiboot2.h"
+#include "core/multiboot.h"
 #include "core/panic.h"
 #include "interrupt/idt.h"
 #include "interrupt/pic.h"
