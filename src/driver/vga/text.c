@@ -5,11 +5,13 @@
 #include "driver/vga/videomode.h"
 
 #include "core/io.h"
+#include "memory/kernel_layout.h"
 #include "debug/assert.h"
 
 #include <stddef.h>
 
-static volatile uint8_t* TEXT_VRAM = (volatile uint8_t*) 0xB8000;
+// This memory is mapped to the upper half by memory_bootstrap().
+static volatile uint8_t* TEXT_VRAM = KERNEL_PHYSICAL_TO_VIRTUAL(0xB8000);
 static const enum vga_plane_bits CHAR_PLANE = VGA_PLANE_0_BIT;
 static const enum vga_plane_bits ATTR_PLANE = VGA_PLANE_1_BIT;
 static const enum vga_plane_bits FONT_PLANE = VGA_PLANE_2_BIT;

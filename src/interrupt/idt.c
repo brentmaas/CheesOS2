@@ -1,5 +1,6 @@
 #include "interrupt/idt.h"
 #include "interrupt/exceptions.h"
+#include "memory/kernel_layout.h"
 
 static struct idt_descriptor descriptor;
 static struct idt_entry entries[256];
@@ -10,7 +11,7 @@ void* idt_hardware_callbacks[256];
 extern void idt_create_handler_table(void* table);
 extern void idt_load(void* descriptor);
 
-void idt_set_entry(struct idt_entry* entry, uint32_t offset, uint16_t selector, enum idt_gate_type gate_type, enum idt_flag_type flags) {
+static void idt_set_entry(struct idt_entry* entry, uint32_t offset, uint16_t selector, enum idt_gate_type gate_type, enum idt_flag_type flags) {
     entry->offset_low = offset & 0xFFFFu;
     entry->offset_high = (offset & 0xFFFF0000u) >> 16u;
 

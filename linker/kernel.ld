@@ -2,41 +2,43 @@ ENTRY(_start)
 
 SECTIONS
 {
-    . = 1M;
+    kernel_virtual_start = 0xC0000000;
 
+    . = 1M;
     kernel_start = .;
 
-    .text BLOCK(4K) : ALIGN(4K)
+    .bootstrap.text : ALIGN(4K)
     {
         *(.multiboot)
-        *(.text)
+        *(.bootstrap.text)
     }
 
-    .rodata BLOCK(4K) : ALIGN(4K)
+    . += kernel_virtual_start;
+
+    .text : AT(ADDR(.text) - kernel_virtual_start) ALIGN(4K)
+    {
+        *(.text)
+        *(.init)
+        *(.fini)
+    }
+
+    .rodata : AT(ADDR(.rodata) - kernel_virtual_start) ALIGN(4K)
     {
         *(.rodata)
     }
 
-    .data BLOCK(4K) : ALIGN(4K)
+    .data : AT(ADDR(.data) - kernel_virtual_start) ALIGN(4K)
     {
         *(.data)
     }
 
-    .init BLOCK(4K) : ALIGN(4K)
-    {
-        *(.init)
-    }
-
-    .fini BLOCK(4K) : ALIGN(4K)
-    {
-        *(.fini)
-    }
-
-    .bss BLOCK(4K) : ALIGN(4K)
+    .bss : AT(ADDR(.bss) - kernel_virtual_start) ALIGN(4K)
     {
         *(COMMON)
         *(.bss)
     }
 
-    kernel_end = .;
+    kernel_end = . - kernel_virtual_start;
 }
+
+ASSERT(kernel_end < 1024 * 4096, "Kernel does not fit into 4 MiB");

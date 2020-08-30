@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "core/multiboot.h"
+#include "core/multiboot2.h"
 #include "core/panic.h"
 #include "interrupt/idt.h"
 #include "interrupt/pic.h"
@@ -65,12 +65,10 @@ void kernel_main(const struct multiboot_info* multiboot) {
     pic_remap(0x20, 0x28);
     pic_set_mask(0xEFF9);
     ps2_device_register_interrupts(0x21, 0x2C);
-    gdt_set_int_stack((void*) 0x00200000);
     idt_enable();
 
     log_info("Initializing console");
     console_init();
-
     log_set_sink(sink_serial_and_console, NULL);
 
     if (multiboot->flags & MULTIBOOT_FLAG_BOOT_LOADER_NAME) {
@@ -80,15 +78,15 @@ void kernel_main(const struct multiboot_info* multiboot) {
         log_info("Booted with command line \"%s\"", multiboot->cmdline);
     }
 
-    if (ps2_controller_init()) {
-        log_error("PS2 initialization failed");
-        return;
-    }
-
     if (memory_init(multiboot)) {
         log_error("Failed to initialize memory");
         return;
     }
+
+    // if (ps2_controller_init()) {
+    //     log_error("PS2 initialization failed");
+    //     return;
+    // }
 
     log_info("Initialization finished");
 
@@ -103,8 +101,9 @@ void kernel_main(const struct multiboot_info* multiboot) {
 
     idt_disable();
     idt_make_interrupt_no_status('B', syscall_handler, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_3 | IDT_FLAG_PRESENT);
+    gdt_set_int_stack((void*) 0xC0001000);
     idt_enable();
 
     log_info("Jumping to usercode at %p", (void*) test_usermode);
-    gdt_jump_to_usermode((void*) test_usermode, (void*) 0x00300000);
+    gdt_jump_to_usermode((void*) test_usermode, (void*) 0xC0000000);
 }

@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "debug/assert.h"
+#include "memory/kernel_layout.h"
 
 // Graphics registers
 enum vga_grc_index {
@@ -78,15 +79,16 @@ enum vga_memory_map {
     VGA_MEMORY_MAP_B8000_32K = 0x03
 };
 
+// Note: Returns the virtual address
 static volatile uint8_t* vga_memory_map_ptr(enum vga_memory_map map) {
     switch (map) {
         case VGA_MEMORY_MAP_A0000_128K:
         case VGA_MEMORY_MAP_A0000_64K:
-            return (volatile uint8_t*) 0xA0000;
+            return (volatile uint8_t*) KERNEL_PHYSICAL_TO_VIRTUAL(0xA0000);
         case VGA_MEMORY_MAP_B0000_32K:
-            return (volatile uint8_t*) 0xB0000;
+            return (volatile uint8_t*) KERNEL_PHYSICAL_TO_VIRTUAL(0xB0000);
         case VGA_MEMORY_MAP_B8000_32K:
-            return (volatile uint8_t*) 0xB8000;
+            return (volatile uint8_t*) KERNEL_PHYSICAL_TO_VIRTUAL(0xB8000);
     }
 
     unreachable();
