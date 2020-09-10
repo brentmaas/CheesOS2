@@ -53,7 +53,5 @@ void pic_end_interrupt(uint8_t controller) {
     if(controller == PIC_SLAVE) {
         io_out8(PIC_SLAVE_COMMAND_PORT, PIC_END_OF_INTERRUPT);
     }
-    else {
-        io_out8(PIC_MASTER_COMMAND_PORT, PIC_END_OF_INTERRUPT);
-    }
+    io_out8(PIC_MASTER_COMMAND_PORT, PIC_END_OF_INTERRUPT);
 }
