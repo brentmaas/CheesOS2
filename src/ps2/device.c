@@ -41,7 +41,10 @@ static volatile enum ps2_device_state state_2;
 static volatile uint8_t device_2_last_command[PS2_COMMAND_MAX_SIZE];
 static volatile size_t device_2_last_command_size;
 
-void ps2_device_send(enum ps2_device_id, volatile uint8_t*, size_t);
+static volatile bool ps2_device_identification_complete;
+static volatile enum ps2_device_type ps2_device_identification;
+
+void ps2_device_send(enum ps2_device_id device, volatile uint8_t* command, size_t command_size);
 
 void ps2_device_handle_interrupt(volatile enum ps2_device_state* state) {
     uint8_t data = io_in8(PS2_DEVICE_PORT);
@@ -52,23 +55,40 @@ void ps2_device_handle_interrupt(volatile enum ps2_device_state* state) {
         case PS2_STATE_WAIT_ACK:
             if(data == PS2_RESPONSE_ACK) {
                 *state = PS2_STATE_INITIAL;
-            }
-            else {
+            } else {
                 ps2_device_send(state == &state_1 ? PS2_DEVICE_FIRST : PS2_DEVICE_SECOND, device_1_last_command, device_1_last_command_size);
             }
             break;
         case PS2_STATE_ID_WAIT_ACK:
             if(data == PS2_RESPONSE_ACK) {
                 *state = PS2_STATE_ID_READ;
-            }
-            else {
+            } else {
                 ps2_device_send(state == &state_1 ? PS2_DEVICE_FIRST : PS2_DEVICE_SECOND, device_1_last_command, device_1_last_command_size);
             }
             break;
         case PS2_STATE_ID_READ:
             log_debug("Read id byte: %x", (unsigned)data);
-            if(data != 0x83)
+            if(data != PS2_DEVICE_TYPE_RESPONSE_MF2_KEYBOARD_FIRST){
                 *state = PS2_STATE_INITIAL;
+                ps2_device_identification_complete = true;
+            }
+            switch(data){
+                case PS2_DEVICE_TYPE_RESPONSE_MOUSE:
+                    ps2_device_identification = PS2_DEVICE_TYPE_MOUSE;
+                    break;
+                case PS2_DEVICE_TYPE_RESPONSE_MOUSE_SCROLL:
+                    ps2_device_identification = PS2_DEVICE_TYPE_MOUSE_SCROLL;
+                    break;
+                case PS2_DEVICE_TYPE_RESPONSE_MOUSE_5_BUTTON:
+                    ps2_device_identification = PS2_DEVICE_TYPE_MOUSE_5_BUTTON;
+                    break;
+                case PS2_DEVICE_TYPE_RESPONSE_MF2_KEYBOARD_TRANSLATION:
+                    ps2_device_identification = PS2_DEVICE_TYPE_MF2_KEYBOARD_TRANSLATION;
+                    break;
+                case PS2_DEVICE_TYPE_RESPONSE_MF2_KEYBOARD:
+                    ps2_device_identification = PS2_DEVICE_TYPE_MF2_KEYBOARD;
+                    break;
+            }
             break;
         case PS2_STATE_FAIL:
             break;
@@ -131,8 +151,7 @@ void ps2_device_send_command(enum ps2_device_id device, uint8_t command) {
         device_2_last_command[0] = command;
         device_2_last_command_size = 1;
         ps2_device_send(device, device_2_last_command, device_2_last_command_size);
-    }
-    else {
+    } else {
         device_1_last_command[0] = command;
         device_1_last_command_size = 1;
         ps2_device_send(device, device_1_last_command, device_1_last_command_size);
@@ -156,7 +175,8 @@ void ps2_device_reset(enum ps2_device_id device) {
 enum ps2_device_type ps2_device_identify(enum ps2_device_id device) {
     log_debug("Identifying device %u", (unsigned)device);
     ps2_device_send_command(device, PS2_DEVICE_COMMAND_DISABLE_SCAN);
-    if (device == 1) {
+    //???
+    /*if (device == PS2_DEVICE_SECOND) {
         while (true) {
             while (true) {
                 if (io_in8(PS2_CONTROLLER_PORT) & 0x1) {
@@ -167,12 +187,20 @@ enum ps2_device_type ps2_device_identify(enum ps2_device_id device) {
             uint8_t data = io_in8(PS2_DEVICE_PORT);
             log_debug("Device responded with 0x%02X", data);
         }
-    }
+    }*/
 
     ps2_device_wait_for_response(device);
-
+    
+    //Will likely loop infinitely with an AT keyboard, but works on my machine
+    ps2_device_identification = PS2_DEVICE_TYPE_AT_KEYBOARD;
+    ps2_device_identification_complete = false;
+    
     ps2_device_send_command(device, PS2_DEVICE_COMMAND_IDENTIFY);
     ps2_device_wait_for_response(device);
+    
+    while(!ps2_device_identification_complete);
 
     log_debug("End of device identification");
+    
+    return ps2_device_identification;
 }

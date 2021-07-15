@@ -18,6 +18,16 @@ enum ps2_device_type {
     PS2_DEVICE_TYPE_MF2_KEYBOARD
 };
 
+enum ps2_device_type_response {
+    PS2_DEVICE_TYPE_RESPONSE_MOUSE = 0x00,
+    PS2_DEVICE_TYPE_RESPONSE_MOUSE_SCROLL = 0x03,
+    PS2_DEVICE_TYPE_RESPONSE_MOUSE_5_BUTTON = 0x04,
+    PS2_DEVICE_TYPE_RESPONSE_MF2_KEYBOARD_FIRST = 0xAB,
+    PS2_DEVICE_TYPE_RESPONSE_MF2_KEYBOARD_TRANSLATION = 0x41,
+    PS2_DEVICE_TYPE_RESPONSE_MF2_KEYBOARD_TRANSLATION2 = 0xC1,
+    PS2_DEVICE_TYPE_RESPONSE_MF2_KEYBOARD = 0x83
+};
+
 void ps2_device_register_interrupts(uint8_t, uint8_t);
 void ps2_device_reset(enum ps2_device_id);
 enum ps2_device_type ps2_device_identify(enum ps2_device_id);

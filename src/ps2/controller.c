@@ -169,6 +169,8 @@ int ps2_controller_init(void) {
         ps2_device_reset(PS2_DEVICE_FIRST);
         ps2_port1_device = ps2_device_identify(PS2_DEVICE_FIRST);
     }
+    
+    log_debug("First device: %u (0x%X)", ps2_port1_device, ps2_port1_device);
 
     log_debug("Initializing second controller");
 
@@ -176,6 +178,8 @@ int ps2_controller_init(void) {
         ps2_device_reset(PS2_DEVICE_SECOND);
         ps2_port2_device = ps2_device_identify(PS2_DEVICE_SECOND);
     }
+    
+    log_debug("Second device: %u (0x%X)", ps2_port2_device, ps2_port2_device);
 
     return 0;
 }
