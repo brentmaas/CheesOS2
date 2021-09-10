@@ -1,9 +1,9 @@
 [BITS 32]
 
-SECTION .init
+SECTION .init.post
     pop ebp
     ret
 
-SECTION .fini
+SECTION .fini.post
     pop ebp
     ret

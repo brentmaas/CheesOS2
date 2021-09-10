@@ -3,7 +3,7 @@
 #include "driver/vga/videomode.h"
 #include "driver/vga/palette.h"
 #include "driver/vga/text.h"
-#include "res/fonts.h"
+#include "fonts.h"
 
 #include "utility/cprintf.h"
 

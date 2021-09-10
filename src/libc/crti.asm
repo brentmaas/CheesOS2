@@ -3,12 +3,12 @@
 GLOBAL _init
 GLOBAL _fini
 
-SECTION .init
+SECTION .init.pre
 _init:
     push ebp
     mov ebp, esp
 
-SECTION .fini
+SECTION .fini.pre
 _fini:
     push ebp
     mov ebp, esp

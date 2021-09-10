@@ -18,8 +18,14 @@ SECTIONS
     .text : AT(ADDR(.text) - kernel_virtual_start) ALIGN(4K)
     {
         *(.text)
+
+        *(.init.pre)
         *(.init)
+        *(.init.post)
+
+        *(.fini.pre)
         *(.fini)
+        *(.fini.post)
     }
 
     .rodata : AT(ADDR(.rodata) - kernel_virtual_start) ALIGN(4K)

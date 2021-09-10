@@ -18,7 +18,7 @@ CFLAGS += \
 	-O2 \
 	-I$(INCLUDE) \
 	-I$(INCLUDE)/libc \
-	-I$(BUILD)/gen \
+	-I$(BUILD)/gen/res \
 	-ffreestanding \
 	-nostdlib \
 	-std=gnu11 \
@@ -63,7 +63,7 @@ $(BUILD)/gen/res/fonts.o: $(FONTS)
 	@python3 tools/createcharmap.py \
 		-C $(BUILD)/gen/res/fonts.c \
 		-H $(BUILD)/gen/res/fonts.h \
-		-I res/fonts.h \
+		-I fonts.h \
 		$(FONTS)
 	@$(CC) $(CFLAGS) -c -o $@ $(BUILD)/gen/res/fonts.c
 
