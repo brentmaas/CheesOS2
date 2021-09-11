@@ -5,7 +5,7 @@ SECTIONS
     kernel_virtual_start = 0xC0000000;
 
     . = 1M;
-    kernel_start = .;
+    kernel_physical_start = .;
 
     .bootstrap.text : ALIGN(4K)
     {
@@ -44,7 +44,7 @@ SECTIONS
         *(.bss)
     }
 
-    kernel_end = . - kernel_virtual_start;
+    kernel_physical_end = . - kernel_virtual_start;
 }
 
-ASSERT(kernel_end < 1024 * 4096, "Kernel does not fit into 4 MiB");
+ASSERT(kernel_physical_end < 1024 * 4096, "Kernel does not fit into 4 MiB");

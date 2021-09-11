@@ -4,24 +4,17 @@
 #include <stdint.h>
 
 extern void* kernel_virtual_start;
-extern void* kernel_start;
-extern void* kernel_end;
+extern void* kernel_physical_start;
+extern void* kernel_physical_end;
 
-inline uintptr_t kernel_virtual_start_addr() {
-    return (uintptr_t) &kernel_virtual_start;
-}
+#define KERNEL_VIRTUAL_START ((uintptr_t) &kernel_virtual_start)
 
-inline uintptr_t kernel_start_addr() {
-    return (uintptr_t) &kernel_start;
-}
-
-inline uintptr_t kernel_end_addr() {
-    return (uintptr_t) &kernel_end;
-}
+#define KERNEL_PHYSICAL_START ((uintptr_t) &kernel_physical_start)
+#define KERNEL_PHYSICAL_END ((uintptr_t) &kernel_physical_end)
 
 // Returns valid pointers only for things contained in the kernel image
 // Any other virtual addresses added are invalid
-#define KERNEL_VIRTUAL_TO_PHYSICAL(ptr) ((void*) (uintptr_t) (ptr) - (uintptr_t) &kernel_virtual_start)
-#define KERNEL_PHYSICAL_TO_VIRTUAL(ptr) ((void*) (uintptr_t) (ptr) + (uintptr_t) &kernel_virtual_start)
+#define KERNEL_VIRTUAL_TO_PHYSICAL(ptr) ((void*) (uintptr_t) (ptr) - KERNEL_VIRTUAL_START)
+#define KERNEL_PHYSICAL_TO_VIRTUAL(ptr) ((void*) (uintptr_t) (ptr) + KERNEL_VIRTUAL_START)
 
 #endif

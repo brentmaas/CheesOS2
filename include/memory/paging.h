@@ -57,8 +57,6 @@ struct __attribute__((packed, aligned(PAGE_SIZE))) page_table {
     struct page_table_entry entries[PAGE_TABLE_ENTRY_COUNT];
 };
 
-extern void paging_enable(void);
-extern void paging_disable(void);
 extern void paging_invalidate_tlb(void);
 extern void paging_invalidate_address(void* addr);
 extern void paging_load_directory(struct page_directory* dir);

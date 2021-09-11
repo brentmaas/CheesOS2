@@ -33,19 +33,17 @@ struct page_directory* memory_bootstrap() {
     pd->entries[0] = (struct page_dir_entry){
         .present = true,
         .write_enable = true,
-        .user = true,
         .page_table_address = (uintptr_t) pt / PAGE_SIZE
     };
 
     // The actual kernel page table.
-    pd->entries[PAGE_DIR_INDEX(kernel_virtual_start_addr())] = (struct page_dir_entry){
+    pd->entries[PAGE_DIR_INDEX(KERNEL_VIRTUAL_START)] = (struct page_dir_entry){
         .present = true,
         .write_enable = true,
-        .user = true,
         .page_table_address = (uintptr_t) pt / PAGE_SIZE
     };
 
-    uintptr_t kernel_end_page = PAGE_ALIGN_FORWARD((uintptr_t) &kernel_end) / PAGE_SIZE;
+    uintptr_t kernel_end_page = PAGE_ALIGN_FORWARD(KERNEL_PHYSICAL_END) / PAGE_SIZE;
 
     // Add everything up to kernel_end_addr to the kernel page table
     // kernel.ld guarantees that kernel_end_page fits in the page table
@@ -108,9 +106,9 @@ enum memory_result memory_init(const struct multiboot_info* multiboot) {
 
     paging_invalidate_tlb();
 
-    uintptr_t kernel_start_addr = (uintptr_t) &kernel_start;
-    assert(IS_PAGE_ALIGNED(kernel_start_addr));
-    uintptr_t kernel_end_addr = PAGE_ALIGN_FORWARD((uintptr_t) &kernel_end);
+    uintptr_t kernel_start_addr = KERNEL_PHYSICAL_END;
+    assert(IS_PAGE_ALIGNED(KERNEL_PHYSICAL_START));
+    uintptr_t kernel_end_addr = PAGE_ALIGN_FORWARD(KERNEL_PHYSICAL_END);
     size_t kernel_size = kernel_end_addr - kernel_start_addr;
 
     log_info(
