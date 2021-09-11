@@ -1,5 +1,5 @@
-#ifndef _CHEESOS2_MEMORY_PAGING_H
-#define _CHEESOS2_MEMORY_PAGING_H
+#ifndef _CHEESOS2_MEMORY_PAGE_TABLE_H
+#define _CHEESOS2_MEMORY_PAGE_TABLE_H
 
 #include <stdint.h>
 
@@ -57,8 +57,8 @@ struct __attribute__((packed, aligned(PAGE_SIZE))) page_table {
     struct page_table_entry entries[PAGE_TABLE_ENTRY_COUNT];
 };
 
-extern void paging_invalidate_tlb(void);
-extern void paging_invalidate_address(void* addr);
-extern void paging_load_directory(struct page_directory* dir);
+extern void pt_invalidate_tlb(void);
+extern void pt_invalidate_address(void* addr);
+extern void pt_load_directory(struct page_directory* dir);
 
 #endif

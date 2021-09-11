@@ -1,6 +1,5 @@
 #include "memory/memory.h"
 #include "memory/kernel_layout.h"
-#include "memory/alloc/buddy.h"
 
 #include "core/panic.h"
 #include "debug/log.h"
@@ -12,10 +11,8 @@
 static struct page_directory kernel_page_dir;
 static struct page_table kernel_page_table;
 
-static struct buddy_allocator main_physical_allocator;
-
 __attribute__((section(".bootstrap.text")))
-struct page_directory* memory_bootstrap() {
+struct page_directory* memory_bootstrap(void) {
     // Get the physical address of the page dir and kernel page table
     struct page_directory* pd = KERNEL_VIRTUAL_TO_PHYSICAL(&kernel_page_dir);
     struct page_table* pt = KERNEL_VIRTUAL_TO_PHYSICAL(&kernel_page_table);
@@ -104,7 +101,7 @@ enum memory_result memory_init(const struct multiboot_info* multiboot) {
         .present = false
     };
 
-    paging_invalidate_tlb();
+    pt_invalidate_tlb();
 
     uintptr_t kernel_start_addr = KERNEL_PHYSICAL_END;
     assert(IS_PAGE_ALIGNED(KERNEL_PHYSICAL_START));
@@ -149,121 +146,5 @@ enum memory_result memory_init(const struct multiboot_info* multiboot) {
         remaining_mem / PAGE_SIZE
     );
 
-    // TODO: Rework
-    // buddy_init(&main_physical_allocator, (void*) kernel_end_addr, remaining_mem);
-
-    return MEMORY_OK;
-}
-
-void* memory_alloc_physical(size_t pages) {
-    return buddy_alloc_pages(&main_physical_allocator, pages);
-}
-
-void memory_free_physical(void* memory) {
-    buddy_free_pages(&main_physical_allocator, memory);
-}
-
-enum memory_result memory_set_mapping(struct page_directory* pdir, void* virtual, void* physical, enum memory_map_flags flags) {
-    uintptr_t virtual_addr = (uintptr_t) virtual;
-    uintptr_t physical_addr = (uintptr_t) physical;
-    assert(IS_PAGE_ALIGNED(virtual_addr));
-    assert(IS_PAGE_ALIGNED(physical_addr));
-
-    size_t pdi = PAGE_DIR_INDEX(virtual_addr);
-    size_t pti = PAGE_TABLE_INDEX(virtual_addr);
-
-    struct page_dir_entry* pde = &pdir->entries[pdi];
-    struct page_table* pt;
-    if (pde->present) {
-        pt = (struct page_table*) (pde->page_table_address * PAGE_SIZE);
-    } else {
-        pt = memory_alloc_physical(1);
-        if (!pt) {
-            return MEMORY_PHYSICAL_ALLOC_FAILED;
-        }
-
-        *pde = (struct page_dir_entry) {
-            .present = true,
-            .user = true,
-            .page_table_address = ((uintptr_t) pt) / PAGE_SIZE
-        };
-    }
-
-    struct page_table_entry* pte = &pt->entries[pti];
-    *pte = (struct page_table_entry) {
-        .present = true,
-        .write_enable = (flags & MEMORY_MAP_WRITABLE) != 0,
-        .user = (flags & MEMORY_MAP_USER) != 0,
-        .page_address = ((uintptr_t) physical) / PAGE_SIZE
-    };
-
-    paging_invalidate_address(virtual);
-    return MEMORY_OK;
-}
-
-enum memory_result memory_map(struct page_directory* pdir, void* virtual, enum memory_map_flags flags) {
-    void* physical = memory_alloc_physical(1);
-    if (!physical) {
-        return MEMORY_PHYSICAL_ALLOC_FAILED;
-    }
-
-    int result = memory_set_mapping(pdir, virtual, physical, flags);
-    if (result) {
-        memory_free_physical(physical);
-    }
-
-    return result;
-}
-
-enum memory_result memory_unmap(struct page_directory* pdir, void* virtual) {
-    uintptr_t virtual_addr = (uintptr_t) virtual;
-    assert(IS_PAGE_ALIGNED(virtual_addr));
-
-    size_t pdi = PAGE_DIR_INDEX(virtual_addr);
-    size_t pti = PAGE_TABLE_INDEX(virtual_addr);
-
-    struct page_dir_entry* pde = &pdir->entries[pdi];
-    if (!pde->present) {
-        return MEMORY_UNMAPPED_VADDR;
-    }
-    struct page_table* pt = (struct page_table*) (pde->page_table_address * PAGE_SIZE);
-    struct page_table_entry* pte = &pt->entries[pti];
-    if (!pte->present) {
-        return MEMORY_UNMAPPED_VADDR;
-    }
-
-    *pte = (struct page_table_entry) {.present = false};
-    paging_invalidate_address(virtual);
-
-    for (size_t i = 0; i < PAGE_TABLE_ENTRY_COUNT; ++i) {
-        if (pt->entries[i].present) {
-            return MEMORY_OK;
-        }
-    }
-
-    // Remove page table from the page directory, as its empty
-    *pde = (struct page_dir_entry) {.present = false};
-
-    memory_free_physical(pt);
-    return MEMORY_OK;
-}
-
-enum memory_result memory_translate(const struct page_directory* pdir, void* virtual, void** physical) {
-    uintptr_t virtual_addr = (uintptr_t) virtual;
-
-    size_t pdi = PAGE_DIR_INDEX(virtual_addr);
-    size_t pti = PAGE_TABLE_INDEX(virtual_addr);
-
-    const struct page_dir_entry* pde = &pdir->entries[pdi];
-    if (!pde->present) {
-        return MEMORY_UNMAPPED_VADDR;
-    }
-    const struct page_table* pt = (struct page_table*) (pde->page_table_address * PAGE_SIZE);
-    const struct page_table_entry* pte = &pt->entries[pti];
-    if (!pte->present) {
-        return MEMORY_UNMAPPED_VADDR;
-    }
-
-    *physical = (void*) (pte->page_address * PAGE_SIZE + PAGE_OFFSET(virtual_addr));
     return MEMORY_OK;
 }
