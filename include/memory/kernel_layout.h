@@ -4,10 +4,12 @@
 #include <stdint.h>
 
 extern void* kernel_virtual_start;
+extern void* kernel_virtual_end;
 extern void* kernel_physical_start;
 extern void* kernel_physical_end;
 
 #define KERNEL_VIRTUAL_START ((uintptr_t) &kernel_virtual_start)
+#define KERNEL_VIRTUAL_END ((uintptr_t) &kernel_virtual_end)
 
 #define KERNEL_PHYSICAL_START ((uintptr_t) &kernel_physical_start)
 #define KERNEL_PHYSICAL_END ((uintptr_t) &kernel_physical_end)

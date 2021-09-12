@@ -1,21 +1,21 @@
 #include "memory/memory.h"
 #include "memory/kernel_layout.h"
+#include "memory/pmm.h"
 
-#include "core/panic.h"
 #include "debug/log.h"
 #include "debug/assert.h"
 
 #include <stdint.h>
 #include <stdbool.h>
 
-static struct page_directory kernel_page_dir;
-static struct page_table kernel_page_table;
+struct page_directory KERNEL_PAGE_DIR;
+static struct page_table KERNEL_PAGE_TABLE;
 
 __attribute__((section(".bootstrap.text")))
 struct page_directory* memory_bootstrap(void) {
     // Get the physical address of the page dir and kernel page table
-    struct page_directory* pd = KERNEL_VIRTUAL_TO_PHYSICAL(&kernel_page_dir);
-    struct page_table* pt = KERNEL_VIRTUAL_TO_PHYSICAL(&kernel_page_table);
+    struct page_directory* pd = KERNEL_VIRTUAL_TO_PHYSICAL(&KERNEL_PAGE_DIR);
+    struct page_table* pt = KERNEL_VIRTUAL_TO_PHYSICAL(&KERNEL_PAGE_TABLE);
 
     for (size_t i = 0; i < PAGE_DIR_ENTRY_COUNT; ++i) {
         pd->entries[i] = (struct page_dir_entry){};
@@ -30,17 +30,17 @@ struct page_directory* memory_bootstrap(void) {
     pd->entries[0] = (struct page_dir_entry){
         .present = true,
         .write_enable = true,
-        .page_table_address = (uintptr_t) pt / PAGE_SIZE
+        .page_table_address = PAGE_INDEX((uintptr_t) pt)
     };
 
     // The actual kernel page table.
     pd->entries[PAGE_DIR_INDEX(KERNEL_VIRTUAL_START)] = (struct page_dir_entry){
         .present = true,
         .write_enable = true,
-        .page_table_address = (uintptr_t) pt / PAGE_SIZE
+        .page_table_address = PAGE_INDEX((uintptr_t) pt)
     };
 
-    uintptr_t kernel_end_page = PAGE_ALIGN_FORWARD(KERNEL_PHYSICAL_END) / PAGE_SIZE;
+    uintptr_t kernel_end_page = PAGE_INDEX(PAGE_ALIGN_FORWARD(KERNEL_PHYSICAL_END));
 
     // Add everything up to kernel_end_addr to the kernel page table
     // kernel.ld guarantees that kernel_end_page fits in the page table
@@ -56,7 +56,14 @@ struct page_directory* memory_bootstrap(void) {
     return pd;
 }
 
-static void memory_dump_map(const struct multiboot_info* multiboot) {
+void memory_unmap_identity(void) {
+    KERNEL_PAGE_DIR.entries[0] = (struct page_dir_entry){
+        .present = false
+    };
+    pt_invalidate_tlb();
+}
+
+static void memory_dump_map(const struct multiboot* multiboot) {
     log_debug("Multiboot memory map dump:");
     uintptr_t entry_addr = (uintptr_t) multiboot->mmap_addr;
     uintptr_t entry_end = (uintptr_t) multiboot->mmap_addr + multiboot->mmap_length;
@@ -70,7 +77,7 @@ static void memory_dump_map(const struct multiboot_info* multiboot) {
 }
 
 static const struct multiboot_mmap_entry* memory_find_mb_mmap(
-    const struct multiboot_info* multiboot,
+    const struct multiboot* multiboot,
     uintptr_t start_addr,
     uintptr_t end_addr
 ) {
@@ -91,19 +98,12 @@ static const struct multiboot_mmap_entry* memory_find_mb_mmap(
     return NULL;
 }
 
-enum memory_result memory_init(const struct multiboot_info* multiboot) {
+enum memory_result memory_init(const struct multiboot* multiboot) {
     log_info("Initializing memory");
 
     memory_dump_map(multiboot);
 
-    // Remove the identity map
-    kernel_page_dir.entries[0] = (struct page_dir_entry){
-        .present = false
-    };
-
-    pt_invalidate_tlb();
-
-    uintptr_t kernel_start_addr = KERNEL_PHYSICAL_END;
+    uintptr_t kernel_start_addr = KERNEL_PHYSICAL_START;
     assert(IS_PAGE_ALIGNED(KERNEL_PHYSICAL_START));
     uintptr_t kernel_end_addr = PAGE_ALIGN_FORWARD(KERNEL_PHYSICAL_END);
     size_t kernel_size = kernel_end_addr - kernel_start_addr;
@@ -145,6 +145,8 @@ enum memory_result memory_init(const struct multiboot_info* multiboot) {
         remaining_mem / 1024,
         remaining_mem / PAGE_SIZE
     );
+
+    pmm_init(multiboot);
 
     return MEMORY_OK;
 }

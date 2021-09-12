@@ -6,6 +6,8 @@
 
 #include <stddef.h>
 
+extern struct page_directory KERNEL_PAGE_DIR;
+
 enum memory_result {
     MEMORY_OK,
     MEMORY_NO_VALID_ZONE,
@@ -18,9 +20,12 @@ enum memory_map_flags {
     MEMORY_MAP_USER = 0x2,
 };
 
+// Bootstrapping memory identity maps kernel memory. This function removes that mapping.
+void memory_unmap_identity();
+
 // After this returns, any memory which might be in the > 1MiB region
 // (such as the multiboot information structure) might be invalid.
 // Returns 0 on success
-enum memory_result memory_init(const struct multiboot_info* multiboot);
+enum memory_result memory_init(const struct multiboot* multiboot);
 
 #endif

@@ -1,21 +1,24 @@
 #ifndef _CHEESOS2_MEMORY_PAGE_TABLE_H
 #define _CHEESOS2_MEMORY_PAGE_TABLE_H
 
-#include <stdint.h>
-
 #include "memory/align.h"
 
-#define PAGE_DIR_ENTRY_BITS (10u)
-#define PAGE_TABLE_ENTRY_BITS (10u)
-#define PAGE_OFFSET_BITS (12u)
+#include <stdint.h>
+#include <stddef.h>
 
-#define PAGE_DIR_ENTRY_COUNT (1 << PAGE_DIR_ENTRY_BITS)
-#define PAGE_TABLE_ENTRY_COUNT (1 << PAGE_TABLE_ENTRY_BITS)
-#define PAGE_SIZE (1 << PAGE_OFFSET_BITS)
+#define PAGE_DIR_ENTRY_BITS (10U)
+#define PAGE_TABLE_ENTRY_BITS (10U)
+#define PAGE_OFFSET_BITS (12U)
+
+#define PAGE_DIR_ENTRY_COUNT (1U << PAGE_DIR_ENTRY_BITS)
+#define PAGE_TABLE_ENTRY_COUNT (1U << PAGE_TABLE_ENTRY_BITS)
+#define PAGE_SIZE (1U << PAGE_OFFSET_BITS)
 
 #define PAGE_DIR_INDEX(addr) (((addr) >> (PAGE_OFFSET_BITS + PAGE_TABLE_ENTRY_BITS)) & (PAGE_DIR_ENTRY_COUNT - 1))
 #define PAGE_TABLE_INDEX(addr) (((addr) >> PAGE_OFFSET_BITS) & (PAGE_TABLE_ENTRY_COUNT - 1))
 #define PAGE_OFFSET(addr) ((addr) & (PAGE_SIZE - 1))
+
+#define PAGE_INDEX(addr) ((addr) >> PAGE_OFFSET_BITS)
 
 #define PAGE_ALIGN_BACKWARD(addr) (ALIGN_BACKWARD_2POW((addr), PAGE_SIZE))
 #define PAGE_ALIGN_FORWARD(addr) (ALIGN_FORWARD_2POW((addr), PAGE_SIZE))
@@ -59,6 +62,5 @@ struct __attribute__((packed, aligned(PAGE_SIZE))) page_table {
 
 extern void pt_invalidate_tlb(void);
 extern void pt_invalidate_address(void* addr);
-extern void pt_load_directory(struct page_directory* dir);
 
 #endif

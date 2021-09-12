@@ -43,7 +43,7 @@ sources = files(
     'src/utility/cprintf.c',
     'src/memory/gdt.c',
     'src/memory/memory.c',
-    'src/memory/page_table.c',
+    'src/memory/pmm.c',
     'src/pci/pci.c',
     'src/interrupt/exceptions.c',
     'src/interrupt/pic.c',

@@ -44,7 +44,9 @@ SECTIONS
         *(.bss)
     }
 
+    kernel_virtual_end = .;
     kernel_physical_end = . - kernel_virtual_start;
 }
 
-ASSERT(kernel_physical_end < 1024 * 4096, "Kernel does not fit into 4 MiB");
+/* Assert that we only require a single page table for all memory the kernel might require*/
+ASSERT(kernel_physical_end < 4M, "Kernel does not fit into 4 MiB");

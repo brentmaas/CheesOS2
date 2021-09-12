@@ -46,7 +46,9 @@ static void test_usermode() {
     *(volatile int*)0;
 }
 
-void kernel_main(const struct multiboot_info* multiboot) {
+void kernel_main(const struct multiboot* multiboot) {
+    memory_unmap_identity();
+
     serial_init(SERIAL_PORT_1, ((struct serial_init_info) {
         .data_size = SERIAL_DATA_SIZE_8_BITS,
         .stop_bits = SERIAL_STOP_BITS_ONE,
@@ -83,10 +85,10 @@ void kernel_main(const struct multiboot_info* multiboot) {
         return;
     }
 
-    if (ps2_controller_init()) {
-        log_error("PS2 initialization failed");
-        return;
-    }
+    // if (ps2_controller_init()) {
+    //     log_error("PS2 initialization failed");
+    //     return;
+    // }
 
     log_info("Initialization finished");
 

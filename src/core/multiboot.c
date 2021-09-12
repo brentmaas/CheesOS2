@@ -19,17 +19,17 @@ static char cmdline[MAX_CMDLINE];
 static char boot_loader_name[MAX_BOOT_LOADER_NAME];
 static struct multiboot_mmap_entry mmap_entries[MAX_ENTRIES];
 
-static struct multiboot_info bootstrap_multiboot;
+static struct multiboot bootstrap_multiboot;
 
 __attribute__((section(".bootstrap.text")))
-struct multiboot_info* multiboot_bootstrap(struct multiboot_info* multiboot) {
-    struct multiboot_info* physical_bootstrap_multiboot = KERNEL_VIRTUAL_TO_PHYSICAL(&bootstrap_multiboot);
+struct multiboot* multiboot_bootstrap(struct multiboot* multiboot) {
+    struct multiboot* physical_bootstrap_multiboot = KERNEL_VIRTUAL_TO_PHYSICAL(&bootstrap_multiboot);
     char* physical_cmdline = KERNEL_VIRTUAL_TO_PHYSICAL(&cmdline);
     char* physical_boot_loader_name = KERNEL_VIRTUAL_TO_PHYSICAL(&boot_loader_name);
     struct multiboot_mmap_entry* physical_mmap_entries = KERNEL_VIRTUAL_TO_PHYSICAL(&mmap_entries);
 
     // TODO: Add other fields as needed
-    *physical_bootstrap_multiboot = (struct multiboot_info){
+    *physical_bootstrap_multiboot = (struct multiboot){
         .flags = multiboot->flags & MULTIBOOT_FLAG_MEM_COUNT,
         .mem_lower = multiboot->mem_lower,
         .mem_upper = multiboot->mem_upper,

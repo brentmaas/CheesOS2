@@ -2,6 +2,7 @@
 #define _CHEESOS2_CORE_MULTIBOOT_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 struct multiboot_header {
     uint32_t magic;
@@ -31,7 +32,7 @@ struct __attribute__((packed)) multiboot_mmap_entry {
     enum multiboot_mmap_type type;
 };
 
-struct __attribute__((packed)) multiboot_info {
+struct __attribute__((packed)) multiboot {
     uint32_t flags;
 
     void* mem_lower;
@@ -107,7 +108,7 @@ enum multiboot_flags {
     MULTIBOOT_FLAG_CMDLINE = 4,
     MULTIBOOT_FLAG_MODULES = 8,
     MULTIBOOT_FLAG_EXECUTABLE_SYMBOL_A_OUT = 16,
-    MULTIBOOT_FLAG_EXECUTE_SYMBOL_ELF = 32,
+    MULTIBOOT_FLAG_EXECUTABLE_SYMBOL_ELF = 32,
     MULTIBOOT_FLAG_MEMORY_MAP = 64,
     MULTIBOOT_FLAG_DRIVES = 128,
     MULTIBOOT_FLAG_BIOS_CONFIG_TABLE = 256,
