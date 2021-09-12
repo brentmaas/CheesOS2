@@ -247,6 +247,16 @@ size_t pmm_total_pages(void) {
     return PMM_STATE.total_pages;
 }
 
+void pmm_mark_reserved(uintptr_t page) {
+    assert(!bitmap_is_allocated(page));
+    bitmap_set_allocated(page, true);
+    PMM_STATE.page_stack_top = 0;
+}
+
+bool pmm_is_free(uintptr_t page) {
+    return !bitmap_is_allocated(page);
+}
+
 intptr_t pmm_alloc(void) {
     if (PMM_STATE.free_pages == 0) {
         return -1;
@@ -256,7 +266,7 @@ intptr_t pmm_alloc(void) {
         pmm_refill_stack();
     }
 
-    assert(PMM_STATE.page_stack_top != 0); // If this is reached, free_pages was not correct.
+    assert(PMM_STATE.page_stack_top != 0); // If this is reached, bookkeeping of `free_pages` was incorrect.
 
     intptr_t page = PMM_STATE.page_stack[--PMM_STATE.page_stack_top];
 
