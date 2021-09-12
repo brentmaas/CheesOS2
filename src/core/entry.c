@@ -83,10 +83,10 @@ void kernel_main(const struct multiboot* multiboot) {
 
     pmm_init(multiboot);
 
-    if (ps2_controller_init()) {
-        log_error("PS2 initialization failed");
-        return;
-    }
+    // if (ps2_controller_init()) {
+    //     log_error("PS2 initialization failed");
+    //     return;
+    // }
 
     log_info("Initialization finished");
 

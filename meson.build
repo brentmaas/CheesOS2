@@ -42,7 +42,6 @@ sources = files(
     'src/driver/serial/serial.c',
     'src/utility/cprintf.c',
     'src/memory/gdt.c',
-    'src/memory/memory.c',
     'src/memory/pmm.c',
     'src/memory/vmm.c',
     'src/pci/pci.c',

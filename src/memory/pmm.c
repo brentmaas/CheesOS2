@@ -190,7 +190,27 @@ static void pmm_dump_mb_mmap(const struct multiboot* mb) {
         const struct multiboot_mmap_entry* entry = (struct multiboot_mmap_entry*) entry_addr;
         uint64_t addr = entry->addr;
         uint64_t size = entry->len;
-        log_debug("0x%llX, %llu KiB (%llu pages), type: %u", addr, size / 1024, size / PAGE_SIZE, entry->type);
+
+        const char* type_name = "(invalid type)";
+        switch (entry->type) {
+            case MULTIBOOT_MMAP_AVAILABLE:
+                type_name = "available";
+                break;
+            case MULTIBOOT_MMAP_RESERVED:
+                type_name = "reserved";
+                break;
+            case MULTIBOOT_MMAP_ACPI:
+                type_name = "acpi";
+                break;
+            case MULTIBOOT_MMAP_ACPI_NVS:
+                type_name = "acpi nvs";
+                break;
+            case MULTIBOOT_MMAP_DEFECTIVE:
+                type_name = "defective";
+                break;
+        }
+
+        log_debug("0x%llX, %llu KiB (%llu pages), %s", addr, size / 1024, size / PAGE_SIZE, type_name);
         entry_addr += entry->size + sizeof(entry->size);
     }
 }
