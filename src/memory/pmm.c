@@ -113,31 +113,6 @@ static void bitmap_mark_pages(uintptr_t begin, uintptr_t end , bool mark_as_allo
     }
 }
 
-// Find the index of an unallocated page, or a negative value if none such exist.
-// This function does not mark the page as allocated, but does update the `scan_index`.
-// TODO: Optimize
-static intptr_t bitmap_find_next_free_page() {
-    if (PMM_STATE.free_pages == 0)
-        return -1;
-
-    uintptr_t page = PMM_STATE.scan_index;
-    for (size_t i = 0; i < PMM_STATE.total_pages; ++i) {
-        uintptr_t next_page = page + 1;
-        if (next_page == PMM_STATE.total_pages) {
-            next_page = 0;
-        }
-
-        if (!bitmap_is_allocated(page)) {
-            PMM_STATE.scan_index = next_page;
-            return page;
-        }
-
-        page = next_page;
-    }
-
-    return -1;
-}
-
 // Compute the initial state of the bitmap.
 // This sets a bit corresponding to a page to 1 if it is already been allocated.
 // This includes all pages which are not present in any memory region that is marked
@@ -218,6 +193,52 @@ void pmm_init(const struct multiboot* mb) {
     log_info("%zu/%zu physical page(s) free for allocation", pmm_free_pages(), pmm_total_pages());
 }
 
+// Find the index of an unallocated page, or a negative value if none such exist.
+// This function does not mark the page as allocated, but does update the `scan_index`.
+// TODO: Optimize
+static intptr_t pmm_find_next_free_page() {
+    if (PMM_STATE.free_pages == 0)
+        return -1;
+
+    uintptr_t page = PMM_STATE.scan_index;
+    for (size_t i = 0; i < PMM_STATE.total_pages; ++i) {
+        uintptr_t next_page = page + 1;
+        if (next_page == PMM_STATE.total_pages) {
+            next_page = 0;
+        }
+
+        if (!bitmap_is_allocated(page)) {
+            // Important: advancing is required here, otherwise the same page might end up twice on the stack.
+            PMM_STATE.scan_index = next_page;
+            return page;
+        }
+
+        page = next_page;
+    }
+
+    unreachable(); // If this was reached, PMM bookkeeping was invalid.
+}
+
+// Refill the internal stack of pages.
+static void pmm_refill_stack(void) {
+    size_t top = PMM_STATE.page_stack_top;
+    while (top != PMM_PAGE_STACK_ENTRIES) {
+        // Check whether there are any pages at all left to allocate.
+        // This is a performance optimization, and is also required to ensure that no two same pages end
+        // up on the stack.
+        if (top == PMM_STATE.free_pages)
+            break;
+
+        intptr_t page = pmm_find_next_free_page();
+        assert(page >= 0); // Check above handles this case.
+
+        PMM_STATE.page_stack[top++] = page;
+    }
+
+    log_debug("Refilled %zu stack entries (new top: %zu) (free: %zu)", top - PMM_STATE.page_stack_top, top, PMM_STATE.free_pages);
+    PMM_STATE.page_stack_top = top;
+}
+
 size_t pmm_free_pages(void) {
     return PMM_STATE.free_pages;
 }
@@ -227,9 +248,17 @@ size_t pmm_total_pages(void) {
 }
 
 intptr_t pmm_alloc(void) {
-    intptr_t page = bitmap_find_next_free_page();
-    if (page < 0)
+    if (PMM_STATE.free_pages == 0) {
         return -1;
+    }
+
+    if (PMM_STATE.page_stack_top == 0) {
+        pmm_refill_stack();
+    }
+
+    assert(PMM_STATE.page_stack_top != 0); // If this is reached, free_pages was not correct.
+
+    intptr_t page = PMM_STATE.page_stack[--PMM_STATE.page_stack_top];
 
     bitmap_set_allocated(page, true);
     --PMM_STATE.free_pages;
@@ -238,6 +267,11 @@ intptr_t pmm_alloc(void) {
 
 void pmm_free(uintptr_t page) {
     assert(bitmap_is_allocated(page));
+    // if the stack is not full, put the free'd page on top of it.
+    if (PMM_STATE.page_stack_top != PMM_PAGE_STACK_ENTRIES) {
+        PMM_STATE.page_stack[PMM_STATE.page_stack_top++] = page;
+    }
+
     bitmap_set_allocated(page, false);
     ++PMM_STATE.free_pages;
 }

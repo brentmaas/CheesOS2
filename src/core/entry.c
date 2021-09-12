@@ -8,6 +8,7 @@
 
 #include "memory/gdt.h"
 #include "memory/memory.h"
+#include "memory/pmm.h"
 
 #include "driver/vga/text.h"
 #include "driver/serial/serial.h"
