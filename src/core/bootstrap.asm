@@ -2,7 +2,7 @@
 
 CR0_ENABLE_PAGING_BIT equ 1 << 31
 
-EXTERN memory_bootstrap
+EXTERN vmm_bootstrap
 EXTERN multiboot_bootstrap
 
 EXTERN kernel_main
@@ -27,7 +27,7 @@ _start:
     mov esp, kernel_stack_top
     sub esp, kernel_virtual_start ; For some reason this can't be done at compiletime
 
-    call memory_bootstrap
+    call vmm_bootstrap
     mov cr3, eax
 
     push ebx

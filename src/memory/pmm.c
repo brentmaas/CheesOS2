@@ -1,6 +1,6 @@
 #include "memory/pmm.h"
+#include "memory/vmm.h"
 #include "memory/align.h"
-#include "memory/memory.h"
 #include "memory/page_table.h"
 #include "memory/kernel_layout.h"
 
@@ -170,7 +170,7 @@ static size_t bitmap_init(const struct multiboot* mb, size_t pages, size_t bitma
     // kernel.ld ensures that all kernel memory is in one page directory.
     // TODO: This can probably be moved to virtual memory managing code at some point.
     uintptr_t bitmap_virtual_start = (uintptr_t) BITMAP;
-    struct page_table* pt = &KERNEL_PAGE_TABLE;
+    struct page_table* pt = &VMM_KERNEL_PAGE_TABLE;
 
     for (size_t i = bitmap_pages; i < MAX_BITMAP_PAGES; ++i) {
         uintptr_t addr = bitmap_virtual_start + i * PAGE_SIZE;
@@ -181,10 +181,26 @@ static size_t bitmap_init(const struct multiboot* mb, size_t pages, size_t bitma
     return free_pages;
 }
 
+static void pmm_dump_mb_mmap(const struct multiboot* mb) {
+    log_debug("Multiboot memory map dump:");
+    log_debug("address, size, type");
+    uintptr_t entry_addr = (uintptr_t) mb->mmap_addr;
+    uintptr_t entry_end = (uintptr_t) mb->mmap_addr + mb->mmap_length;
+    while (entry_addr < entry_end) {
+        const struct multiboot_mmap_entry* entry = (struct multiboot_mmap_entry*) entry_addr;
+        uint64_t addr = entry->addr;
+        uint64_t size = entry->len;
+        log_debug("0x%llX, %llu KiB (%llu pages), type: %u", addr, size / 1024, size / PAGE_SIZE, entry->type);
+        entry_addr += entry->size + sizeof(entry->size);
+    }
+}
+
 // Note: in this function, we need to map the memory required by the physical
 // memory manager manually, as there is no virtual memory manager available yet.
 void pmm_init(const struct multiboot* mb) {
     log_info("Initializing physical memory manager");
+
+    pmm_dump_mb_mmap(mb);
 
     size_t pages = compute_total_pages(mb);
 

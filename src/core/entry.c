@@ -7,8 +7,8 @@
 #include "interrupt/pic.h"
 
 #include "memory/gdt.h"
-#include "memory/memory.h"
 #include "memory/pmm.h"
+#include "memory/vmm.h"
 
 #include "driver/vga/text.h"
 #include "driver/serial/serial.h"
@@ -48,7 +48,7 @@ static void test_usermode() {
 }
 
 void kernel_main(const struct multiboot* multiboot) {
-    memory_unmap_identity();
+    vmm_unmap_identity();
 
     serial_init(SERIAL_PORT_1, ((struct serial_init_info) {
         .data_size = SERIAL_DATA_SIZE_8_BITS,
@@ -81,10 +81,7 @@ void kernel_main(const struct multiboot* multiboot) {
         log_info("Booted with command line \"%s\"", multiboot->cmdline);
     }
 
-    if (memory_init(multiboot)) {
-        log_error("Failed to initialize memory");
-        return;
-    }
+    pmm_init(multiboot);
 
     if (ps2_controller_init()) {
         log_error("PS2 initialization failed");
