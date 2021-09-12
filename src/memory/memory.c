@@ -9,7 +9,7 @@
 #include <stdbool.h>
 
 struct page_directory KERNEL_PAGE_DIR;
-static struct page_table KERNEL_PAGE_TABLE;
+struct page_table KERNEL_PAGE_TABLE;
 
 __attribute__((section(".bootstrap.text")))
 struct page_directory* memory_bootstrap(void) {

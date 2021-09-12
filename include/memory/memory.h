@@ -7,6 +7,7 @@
 #include <stddef.h>
 
 extern struct page_directory KERNEL_PAGE_DIR;
+extern struct page_table KERNEL_PAGE_TABLE;
 
 enum memory_result {
     MEMORY_OK,

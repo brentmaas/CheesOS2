@@ -166,6 +166,18 @@ static size_t bitmap_init(const struct multiboot* mb, size_t pages, size_t bitma
     bitmap_mark_pages(bitmap_free_begin_page, bitmap_free_end_page, false);
     free_pages += (size_t) (bitmap_free_begin_page - bitmap_free_end_page);
 
+    // Unmap the free'd bitmap pages from kernel memory.
+    // kernel.ld ensures that all kernel memory is in one page directory.
+    // TODO: This can probably be moved to virtual memory managing code at some point.
+    uintptr_t bitmap_virtual_start = (uintptr_t) BITMAP;
+    struct page_table* pt = &KERNEL_PAGE_TABLE;
+
+    for (size_t i = bitmap_pages; i < MAX_BITMAP_PAGES; ++i) {
+        uintptr_t addr = bitmap_virtual_start + i * PAGE_SIZE;
+        pt->entries[PAGE_TABLE_INDEX(addr)] = (struct page_table_entry){.present = false};
+        pt_invalidate_address((void*) addr);
+    }
+
     return free_pages;
 }
 
