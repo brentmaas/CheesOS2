@@ -17,19 +17,15 @@
 _Static_assert(CHAR_BIT == 8);
 #define CHAR_BIT_LOG2 (3)
 
-// find_bitmap_area returns this value when there was no suitable location.
-// Note: this value must not be page aligned so that it cannot represent
-// a valid address.
-#define FIND_BITMAP_FAILED ((uint8_t*) 0xFFFFFFFFULL)
-
-#define BITMAP_BITS_PER_PAGE (PAGE_SIZE * CHAR_BIT)
+// Number of bits that can be stored on a page
+#define BITS_PER_PAGE (PAGE_SIZE * CHAR_BIT)
 
 // The maximum pages of system memory.
 // Note: Specific for 32-bit systems
 #define MAX_PAGES (PAGE_DIR_ENTRY_COUNT * PAGE_TABLE_ENTRY_COUNT)
 
 // The absolute maximum number of pages that the bitmap can be on a 32-bit system.
-#define MAX_BITMAP_PAGES (MAX_PAGES / BITMAP_BITS_PER_PAGE)
+#define MAX_BITMAP_PAGES (MAX_PAGES / BITS_PER_PAGE)
 
 static struct {
     // The total amount of pages the system has to keep track of.
@@ -40,6 +36,11 @@ static struct {
 
     // The total amount of pages currently available for allocation.
     size_t free_pages;
+
+    // The page index where to start scanning for free pages. This ensures we don't have to start
+    // all the way from the zeroth page, leading to many pages being allocated near the start
+    // of the bitmap.
+    size_t scan_index;
 
     // Number of elements currently in the page stack.
     size_t page_stack_top;
@@ -86,7 +87,7 @@ static size_t compute_total_pages(const struct multiboot* mb) {
 }
 
 // Set the state of a particular page in the bitmap
-static void bitmap_set_allocated(size_t page, bool allocated) {
+static void bitmap_set_allocated(uintptr_t page, bool allocated) {
     assert(page < PMM_STATE.total_pages);
     if (allocated) {
         BITMAP[page / CHAR_BIT] |= 1 << (page % CHAR_BIT);
@@ -96,7 +97,7 @@ static void bitmap_set_allocated(size_t page, bool allocated) {
 }
 
 // Check whether a particular page in the bitmap is allocated.
-static bool bitmap_is_allocated(size_t page) {
+static bool bitmap_is_allocated(uintptr_t page) {
     assert(page < PMM_STATE.total_pages);
     return (BITMAP[page / CHAR_BIT] >> (page % CHAR_BIT)) & 1;
 }
@@ -104,12 +105,37 @@ static bool bitmap_is_allocated(size_t page) {
 // Set a region of pages as allocated or free.
 // begin is inclusive, end is exclusive.
 // TODO: Optimize
-static void bitmap_mark_pages(size_t begin, size_t end , bool mark_as_allocated) {
+static void bitmap_mark_pages(uintptr_t begin, uintptr_t end , bool mark_as_allocated) {
     assert(begin <= end && end <= PMM_STATE.total_pages);
 
-    for (size_t page = begin; page < end; ++page) {
+    for (uintptr_t page = begin; page < end; ++page) {
         bitmap_set_allocated(page, mark_as_allocated);
     }
+}
+
+// Find the index of an unallocated page, or a negative value if none such exist.
+// This function does not mark the page as allocated, but does update the `scan_index`.
+// TODO: Optimize
+static intptr_t bitmap_find_next_free_page() {
+    if (PMM_STATE.free_pages == 0)
+        return -1;
+
+    uintptr_t page = PMM_STATE.scan_index;
+    for (size_t i = 0; i < PMM_STATE.total_pages; ++i) {
+        uintptr_t next_page = page + 1;
+        if (next_page == PMM_STATE.total_pages) {
+            next_page = 0;
+        }
+
+        if (!bitmap_is_allocated(page)) {
+            PMM_STATE.scan_index = next_page;
+            return page;
+        }
+
+        page = next_page;
+    }
+
+    return -1;
 }
 
 // Compute the initial state of the bitmap.
@@ -144,7 +170,7 @@ static size_t bitmap_init(const struct multiboot* mb, size_t pages, size_t bitma
                 if (end_page > MAX_PAGES)
                     end_page = MAX_PAGES;
 
-                bitmap_mark_pages((size_t) begin_page, (size_t) end_page, false);
+                bitmap_mark_pages((uintptr_t) begin_page, (uintptr_t) end_page, false);
                 free_pages += (size_t) (end_page - begin_page);
             }
         }
@@ -186,6 +212,7 @@ void pmm_init(const struct multiboot* mb) {
 
     PMM_STATE.total_pages = pages;
     PMM_STATE.page_stack_top = 0;
+    PMM_STATE.scan_index = 0;
     PMM_STATE.free_pages = bitmap_init(mb, pages, bitmap_pages);
 
     log_info("%zu/%zu physical page(s) free for allocation", pmm_free_pages(), pmm_total_pages());
@@ -199,11 +226,19 @@ size_t pmm_total_pages(void) {
     return PMM_STATE.total_pages;
 }
 
-void* pmm_alloc_page(void) {
-    return NULL;
+intptr_t pmm_alloc(void) {
+    intptr_t page = bitmap_find_next_free_page();
+    if (page < 0)
+        return -1;
+
+    bitmap_set_allocated(page, true);
+    --PMM_STATE.free_pages;
+    return page;
 }
 
-void pmm_free_page(void* page) {
-
+void pmm_free(uintptr_t page) {
+    assert(bitmap_is_allocated(page));
+    bitmap_set_allocated(page, false);
+    ++PMM_STATE.free_pages;
 }
 

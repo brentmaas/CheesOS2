@@ -24,14 +24,10 @@ size_t pmm_free_pages(void);
 size_t pmm_total_pages(void);
 
 // Allocate a physical page.
-// Note that this only concerns *physical* pages, and the page is not mapped into virtual memory.
-// Returns the *physical* page address.
-// TODO: Describe error conditions.
-void* pmm_alloc_page(void);
+// Returns a physical page index on success, or a negative value on failure.
+intptr_t pmm_alloc(void);
 
-// Return the physical page to the system memory pool.
-// Note that this only concernts *physical* pages. `page` must be the *physical* address of the
-// page to free, aligned to `PAGE_SIZE`.
-void pmm_free_page(void* page);
+// Return a physical page index to the system memory pool.
+void pmm_free(uintptr_t page);
 
 #endif
