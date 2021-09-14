@@ -1,7 +1,9 @@
 #include "memory/vmm.h"
+#include "memory/pmm.h"
 #include "memory/kernel_layout.h"
 
 #include "debug/log.h"
+#include "debug/assert.h"
 
 #include <stdbool.h>
 
@@ -69,27 +71,72 @@ struct vmm_recursive_page_table* vmm_current_page_table() {
     return (struct vmm_recursive_page_table*) (VMM_RECUSIVE_PAGE_DIR_INDEX * PAGE_TABLE_ENTRY_COUNT * PAGE_SIZE);
 }
 
+enum vmm_result vmm_map_page(void* virtual, void* physical, enum vmm_map_flags flags) {
+    uintptr_t vaddr = (uintptr_t) virtual;
+    assert(IS_PAGE_ALIGNED(vaddr));
+
+    uintptr_t paddr = (uintptr_t) physical;
+    assert(IS_PAGE_ALIGNED(paddr));
+
+    size_t pdi = PAGE_DIR_INDEX(vaddr);
+    size_t pti = PAGE_TABLE_INDEX(vaddr);
+
+    struct vmm_recursive_page_table* rpt = vmm_current_page_table();
+
+    struct page_dir_entry* pde = &rpt->page_directory.entries[pdi];
+    if (!pde->present) {
+        // No page table available, so allocate one.
+
+        intptr_t page_table_page = pmm_alloc();
+        if (page_table_page < 0)
+            return VMM_OUT_OF_PHYSICAL_MEMORY;
+
+        *pde = (struct page_dir_entry){
+            .present = true,
+            .page_table_address = page_table_page,
+        };
+    }
+
+    struct page_table_entry* pte = &rpt->page_tables[pdi].entries[pti];
+    if (pte->present && (flags & VMM_MAP_OVERWRITE) == 0) {
+        // Page was previously mapped.
+        // TODO: Maybe unmap page table if needed?
+        return VMM_ALREADY_MAPPED;
+    }
+
+    *pte = (struct page_table_entry){
+        .present = true,
+        .write_enable = (flags & VMM_MAP_WRITABLE) != 0,
+        .user = (flags & VMM_MAP_USER) != 0,
+        .page_address = PAGE_INDEX(paddr)
+    };
+
+    if (flags & VMM_MAP_OVERWRITE) {
+        pt_invalidate_address(virtual);
+    }
+
+    return VMM_SUCCESS;
+}
+
 void vmm_unmap_page(void* virtual) {
-    uintptr_t addr = (uintptr_t) virtual;
-    size_t pdi = PAGE_DIR_INDEX(addr);
-    size_t pti = PAGE_TABLE_INDEX(addr);
+    uintptr_t vaddr = (uintptr_t) virtual;
+    size_t pdi = PAGE_DIR_INDEX(vaddr);
+    size_t pti = PAGE_TABLE_INDEX(vaddr);
 
     struct vmm_recursive_page_table* rpt = vmm_current_page_table();
 
     // First, check if the page table is mapped at all.
-    struct page_directory* pd = &rpt->page_directory;
-    struct page_dir_entry* pde = &pd->entries[pdi];
+    struct page_dir_entry* pde = &rpt->page_directory.entries[pdi];
     if (!pde->present) {
-        log_debug("Tried to unmap %p which was not mapped", virtual);
+        log_warn("Tried to unmap %p which was not mapped", virtual);
         // TODO: Return some sort of error?
         return;
     }
 
     // Check if the page is mapped at all
-    struct page_table* pt = &rpt->page_tables[pdi];
-    struct page_table_entry* pte = &pt->entries[pti];
+    struct page_table_entry* pte = &rpt->page_tables[pdi].entries[pti];
     if (!pte->present) {
-        log_debug("Tried to unmap %p which was not mapped", virtual);
+        log_warn("Tried to unmap %p which was not mapped", virtual);
         // TODO: Return some sort of error?
         return;
     }
