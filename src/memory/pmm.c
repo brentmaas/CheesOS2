@@ -171,19 +171,8 @@ static size_t bitmap_init(const struct multiboot* mb, size_t pages, size_t bitma
     // reclaiming the unused parts of the bitmap might need to be delayed until
     // both the pmm and vmm are fully initialized.
     for (size_t i = bitmap_pages; i < MAX_BITMAP_PAGES; ++i) {
-        vmm_unmap_page(&BITMAP[i * PAGE_SIZE]);
+        assert(vmm_unmap_page(&BITMAP[i * PAGE_SIZE]) == VMM_SUCCESS);
     }
-
-    // kernel.ld ensures that all kernel memory is in one page directory.
-    // TODO: This can probably be moved to virtual memory managing code at some point.
-    // uintptr_t bitmap_virtual_start = (uintptr_t) BITMAP;
-    // struct page_table* pt = &vmm_current_page_table()->page_tables[];
-
-    // for (size_t i = bitmap_pages; i < MAX_BITMAP_PAGES; ++i) {
-    //     uintptr_t addr = bitmap_virtual_start + i * PAGE_SIZE;
-    //     pt->entries[PAGE_TABLE_INDEX(addr)] = (struct page_table_entry){.present = false};
-    //     pt_invalidate_address((void*) addr);
-    // }
 
     return free_pages;
 }

@@ -31,6 +31,9 @@ enum vmm_result {
 
     // The virtual address was already mapped and VMM_MAP_OVERWRITE was not passed.
     VMM_ALREADY_MAPPED,
+
+    // The virtual address was not mapped while unmapping.
+    VMM_NOT_MAPPED,
 };
 
 // Bootstrapping memory identity maps kernel memory. This function removes that mapping.
@@ -44,6 +47,6 @@ struct vmm_recursive_page_table* vmm_current_page_table();
 enum vmm_result vmm_map_page(void* virtual, void* physical, enum vmm_map_flags flags);
 
 // Unmap a virtual address
-void vmm_unmap_page(void* virtual);
+enum vmm_result vmm_unmap_page(void* virtual);
 
 #endif

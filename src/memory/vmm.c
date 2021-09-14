@@ -118,7 +118,7 @@ enum vmm_result vmm_map_page(void* virtual, void* physical, enum vmm_map_flags f
     return VMM_SUCCESS;
 }
 
-void vmm_unmap_page(void* virtual) {
+enum vmm_result vmm_unmap_page(void* virtual) {
     uintptr_t vaddr = (uintptr_t) virtual;
     size_t pdi = PAGE_DIR_INDEX(vaddr);
     size_t pti = PAGE_TABLE_INDEX(vaddr);
@@ -129,16 +129,14 @@ void vmm_unmap_page(void* virtual) {
     struct page_dir_entry* pde = &rpt->page_directory.entries[pdi];
     if (!pde->present) {
         log_warn("Tried to unmap %p which was not mapped", virtual);
-        // TODO: Return some sort of error?
-        return;
+        return VMM_NOT_MAPPED;
     }
 
     // Check if the page is mapped at all
     struct page_table_entry* pte = &rpt->page_tables[pdi].entries[pti];
     if (!pte->present) {
         log_warn("Tried to unmap %p which was not mapped", virtual);
-        // TODO: Return some sort of error?
-        return;
+        return VMM_NOT_MAPPED;
     }
 
     // remove the page from the table
@@ -146,4 +144,5 @@ void vmm_unmap_page(void* virtual) {
     pt_invalidate_address(virtual);
 
     // TODO: Maybe free page table if it's empty
+    return VMM_SUCCESS;
 }
