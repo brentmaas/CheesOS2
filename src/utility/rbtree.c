@@ -240,7 +240,7 @@ bool rb_iterator_next(struct rb_iterator* it) {
     struct rb_node* current = it->next;
     struct rb_node* prev = it->node;
 
-    while (current) {
+    while (true) {
         if (current->parent == prev) {
             // came from parent. Go to left child if exists, or visit and go to right or parent.
             prev = current;
@@ -258,12 +258,13 @@ bool rb_iterator_next(struct rb_iterator* it) {
             prev = current;
             if (current->right) {
                 current = current->right;
-                break;
             } else {
                 current = current->parent;
             }
+            break;
         } else if (!current->parent) {
-            // Would go to parent, but it doesn't exist. We're at the end.
+            // Came from right child and would go to parent, but it doesn't exist.
+            // We're at the end.
             it->next = NULL;
             it->node = NULL;
             return false;
