@@ -100,7 +100,6 @@ enum vmm_result vmm_map_page(void* virtual, void* physical, enum vmm_map_flags f
     struct page_table_entry* pte = &rpt->page_tables[pdi].entries[pti];
     if (pte->present && (flags & VMM_MAP_OVERWRITE) == 0) {
         // Page was previously mapped.
-        // TODO: Maybe unmap page table if needed?
         return VMM_ALREADY_MAPPED;
     }
 
@@ -144,5 +143,27 @@ enum vmm_result vmm_unmap_page(void* virtual) {
     pt_invalidate_address(virtual);
 
     // TODO: Maybe free page table if it's empty
+    return VMM_SUCCESS;
+}
+
+enum vmm_result vmm_translate(void* virtual, void** physical) {
+    uintptr_t vaddr = (uintptr_t) virtual;
+    size_t pdi = PAGE_DIR_INDEX(vaddr);
+    size_t pti = PAGE_TABLE_INDEX(vaddr);
+
+    struct vmm_recursive_page_table* rpt = vmm_current_page_table();
+
+    struct page_dir_entry* pde = &rpt->page_directory.entries[pdi];
+    if (!pde->present) {
+        return VMM_NOT_MAPPED;
+    }
+
+    struct page_table_entry* pte = &rpt->page_tables[pdi].entries[pti];
+    if (!pte->present) {
+        return VMM_NOT_MAPPED;
+    }
+
+    *physical = (void*)((pte->page_address << PAGE_OFFSET_BITS) | PAGE_OFFSET(vaddr));
+
     return VMM_SUCCESS;
 }
