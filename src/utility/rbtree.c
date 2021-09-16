@@ -154,9 +154,9 @@ static void rb_fix(struct rb_tree* tree, struct rb_node* node) {
     node->is_black = true;
 }
 
-void rb_init(struct rb_tree* tree, rb_node_lt_fn lt) {
+void rb_init(struct rb_tree* tree, rb_node_cmp_fn cmp) {
     tree->root = NULL;
-    tree->lt = lt;
+    tree->cmp = cmp;
 }
 
 void rb_insert(struct rb_tree* tree, struct rb_node* node) {
@@ -175,12 +175,12 @@ void rb_insert(struct rb_tree* tree, struct rb_node* node) {
     struct rb_node* parent;
     while (current) {
         parent = current;
-        current = tree->lt(node, current) ? current->left : current->right;
+        current = tree->cmp(node, current) < 0 ? current->left : current->right;
     }
 
     node->parent = parent;
     // TODO: maybe save a comparison here?
-    if (tree->lt(node, parent)) {
+    if (tree->cmp(node, parent) < 0) {
         parent->left = node;
     } else {
         parent->right = node;
@@ -193,9 +193,42 @@ void rb_delete(struct rb_tree* tree, struct rb_node* node) {
     // TODO
 }
 
-void rb_iterator_init(struct rb_tree* tree, struct rb_iterator* it) {
+struct int_node {
+    struct rb_node node;
+    int value;
+};
+
+struct rb_node* rb_find(struct rb_tree* tree, struct rb_node* node) {
+    return rb_find_by(tree, (rb_find_cmp_fn) tree->cmp, node);
+}
+
+struct rb_node* rb_find_by(struct rb_tree* tree, rb_find_cmp_fn cmp, void* value) {
+    struct rb_node* current = tree->root;
+    while (current) {
+        int order = cmp(value, current);
+        if (order == 0) {
+            return current;
+        } else if (order < 0) {
+            current = current->left;
+        } else {
+            current = current->right;
+        }
+    }
+
+    return NULL;
+}
+
+void rb_iterator_init(struct rb_iterator* it, struct rb_tree* tree) {
     it->next = tree->root;
     it->node = NULL;
+}
+
+void rb_iterator_init_at(struct rb_iterator* it, struct rb_node* start) {
+    it->next = start;
+    // We want to make this node be the next node that is visited, and after ward
+    // we want the iterator to advance to the right child. This means that the previous
+    // node is either the left child if it exists, or the parent of not.
+    it->node = start->left ? start->left : start->parent;
 }
 
 bool rb_iterator_next(struct rb_iterator* it) {
@@ -246,13 +279,8 @@ bool rb_iterator_next(struct rb_iterator* it) {
     return true;
 }
 
-struct int_node {
-    struct rb_node node;
-    int value;
-};
-
-bool int_node_lt(struct rb_node* lhs, struct rb_node* rhs) {
-    return ((struct int_node*) lhs)->value < ((struct int_node*) rhs)->value;
+int int_node_cmp(struct rb_node* lhs, struct rb_node* rhs) {
+    return ((struct int_node*) lhs)->value - ((struct int_node*) rhs)->value;
 }
 
 void test_iterate_cb(struct rb_node* node) {
@@ -263,7 +291,7 @@ void rb_test() {
     struct int_node nodes[10];
 
     struct rb_tree tree;
-    rb_init(&tree, int_node_lt);
+    rb_init(&tree, int_node_cmp);
 
     for (size_t i = 0; i < 10; ++i) {
         nodes[i].value = (10 * (i + 1)) % 13;
@@ -271,8 +299,15 @@ void rb_test() {
         rb_insert(&tree, &nodes[i].node);
     }
 
+    struct rb_node* x = rb_find(&tree, (struct rb_node*) &nodes[1]);
+    log_debug("Finding node with value %u", nodes[1].value);
+    if (x)
+        log_debug("Found node with value %u", ((struct int_node*) x)->value);
+    else
+        log_debug("No such node");
+
     struct rb_iterator it;
-    rb_iterator_init(&tree, &it);
+    rb_iterator_init_at(&it, x);
     while (rb_iterator_next(&it)) {
         log_debug("Visiting node with value %u", ((struct int_node*) it.node)->value);
     }
