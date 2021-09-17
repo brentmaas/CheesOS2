@@ -353,7 +353,8 @@ static void rb_fix_double_black(struct rb_tree* tree, struct rb_node* node) {
             // Don't forget to update the pointers after the rotation here.
             far_nephew = sibling;
             sibling = close_nephew;
-            close_nephew = node == parent->left ? sibling->left : sibling->right;
+            // Note: Close nephew is no longer required so we don't need to update it
+            // close_nephew = node == parent->left ? sibling->left : sibling->right;
         }
 
         /*
@@ -401,14 +402,15 @@ void rb_insert(struct rb_tree* tree, struct rb_node* node) {
 
     struct rb_node* current = tree->root;
     struct rb_node* parent;
+    int order;
     while (current) {
         parent = current;
-        current = tree->cmp(node, current) < 0 ? current->left : current->right;
+        order = tree->cmp(node, current);
+        current = order < 0 ? current->left : current->right;
     }
 
     node->parent = parent;
-    // TODO: maybe save a comparison here?
-    if (tree->cmp(node, parent) < 0) {
+    if (order < 0) {
         parent->left = node;
     } else {
         parent->right = node;
@@ -576,43 +578,4 @@ bool rb_iterator_next(struct rb_iterator* it) {
     it->next = current;
     it->node = prev;
     return true;
-}
-
-int int_node_cmp(struct rb_node* lhs, struct rb_node* rhs) {
-    return ((struct int_node*) lhs)->value - ((struct int_node*) rhs)->value;
-}
-
-void test_iterate_cb(struct rb_node* node) {
-    log_debug("Visiting node with value %i", ((struct int_node*) node)->value);
-}
-
-void rb_test() {
-    struct int_node nodes[10];
-
-    struct rb_tree tree;
-    rb_init(&tree, int_node_cmp);
-
-    for (size_t i = 0; i < 10; ++i) {
-        nodes[i].value = (10 * (i + 1)) % 13;
-        log_debug("Inserting node with value %u", nodes[i].value);
-        rb_insert(&tree, &nodes[i].node);
-    }
-
-    struct rb_node* x = rb_find(&tree, (struct rb_node*) &nodes[1]);
-    log_debug("Finding node with value %u", nodes[1].value);
-    if (x)
-        log_debug("Found node with value %u", ((struct int_node*) x)->value);
-    else
-        log_debug("No such node");
-
-    for (size_t i = 0; i < 10; i += 2) {
-        log_debug("Deleting node with value %u (current size: %u)", nodes[i].value, tree.num_nodes);
-        rb_delete(&tree, &nodes[i].node);
-    }
-
-    struct rb_iterator it;
-    rb_iterator_init(&it, &tree);
-    while (rb_iterator_next(&it)) {
-        log_debug("Visiting node with value %u", ((struct int_node*) it.node)->value);
-    }
 }

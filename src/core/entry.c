@@ -20,8 +20,6 @@
 #include "debug/console/console.h"
 #include "debug/console/shell.h"
 
-#include "utility/rbtree.h"
-
 static int sink_serial_cprintf_cbk(void* context, const char* data, size_t size) {
     for (size_t i = 0; i < size; ++i) {
         serial_busy_write(SERIAL_PORT_1, data[i]);
@@ -100,8 +98,6 @@ void kernel_main(const struct multiboot* multiboot) {
     console_set_attr(VGA_ATTR_GREEN, VGA_ATTR_BLACK);
     console_print("\x90\x91\x91\x91\x91\x91\x91\x91\x91\x92\n");
     console_set_attr(VGA_ATTR_WHITE, VGA_ATTR_BLACK);
-
-    rb_test();
 
     idt_disable();
     idt_make_interrupt_no_status('B', syscall_handler, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_3 | IDT_FLAG_PRESENT);

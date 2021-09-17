@@ -76,6 +76,4 @@ void rb_iterator_init_at(struct rb_iterator* it, struct rb_node* start);
 // valid, and `false` if the end has been reached.
 bool rb_iterator_next(struct rb_iterator* it);
 
-void rb_test();
-
 #endif
