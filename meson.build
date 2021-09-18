@@ -44,11 +44,12 @@ sources = files(
     'src/ps2/controller.c',
     'src/ps2/device.c',
     'src/ps2/keyboard.c',
+    'src/memory/address_range.c',
     'src/memory/gdt.c',
     'src/memory/pmm.c',
     'src/memory/vmm.c',
+    'src/utility/containers/rbtree.c',
     'src/utility/cprintf.c',
-    'src/utility/rbtree.c',
 )
 
 asm_sources = files(

@@ -1,5 +1,5 @@
-#ifndef _CHEESOS2_UTILITY_RBTREE_H
-#define _CHEESOS2_UTILITY_RBTREE_H
+#ifndef _CHEESOS2_UTILITY_CONTAINERS_RBTREE_H
+#define _CHEESOS2_UTILITY_CONTAINERS_RBTREE_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -43,6 +43,10 @@ void rb_insert(struct rb_tree* tree, struct rb_node* node);
 // Delete a particular node from the red-black tree.
 // `node` is the exact node that must be deleted, *not* a node that compares equal.
 void rb_delete(struct rb_tree* tree, struct rb_node* node);
+
+// Move a node from one memory location to another, while keeping the tree structure intact
+// `dst` must not currently be part of the tree.
+void rb_move_node(struct rb_tree* tree, struct rb_node* dst, struct rb_node* src);
 
 // Traverse the tree to find a node which compares equal to `node`.
 // Returns `NULL` if the tree contained no such node.

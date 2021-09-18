@@ -1,6 +1,5 @@
-#include "utility/rbtree.h"
+#include "utility/containers/rbtree.h"
 #include "debug/assert.h"
-#include "debug/log.h"
 
 #include <stddef.h>
 
@@ -493,10 +492,27 @@ void rb_delete(struct rb_tree* tree, struct rb_node* node) {
         parent->right = NULL;
 }
 
-struct int_node {
-    struct rb_node node;
-    int value;
-};
+void rb_move_node(struct rb_tree* tree, struct rb_node* dst, struct rb_node* src) {
+    dst->parent = src->parent;
+    dst->left = src->left;
+    dst->right = src->right;
+
+    if (dst->parent) {
+        if (dst->parent->left == src)
+            dst->parent->left = dst;
+        else
+            dst->parent->right = dst;
+    } else {
+        assert(tree->root == src);
+        tree->root = dst;
+    }
+
+    if (dst->left)
+        dst->left->parent = dst;
+
+    if (dst->right)
+        dst->right->parent = dst;
+}
 
 struct rb_node* rb_find(struct rb_tree* tree, struct rb_node* node) {
     return rb_find_by(tree, (rb_find_cmp_fn) tree->cmp, node);
