@@ -48,7 +48,7 @@ static void test_usermode() {
 }
 
 void kernel_main(const struct multiboot* multiboot) {
-    vmm_unmap_identity();
+    vmm_init();
 
     serial_init(SERIAL_PORT_1, ((struct serial_init_info) {
         .data_size = SERIAL_DATA_SIZE_8_BITS,
@@ -82,6 +82,9 @@ void kernel_main(const struct multiboot* multiboot) {
     }
 
     pmm_init(multiboot);
+
+    log_debug("Kernel addrspace dump:");
+    vmm_addrspace_dump_mappings(vmm_kernel_addrspace());
 
     if (ps2_controller_init()) {
         log_error("PS2 initialization failed");

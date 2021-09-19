@@ -134,8 +134,8 @@ static size_t bitmap_init(const struct multiboot* mb, size_t pages, size_t bitma
 
         if (entry->type == MULTIBOOT_MMAP_AVAILABLE) {
             // Round first page up and last page down.
-            uint64_t begin_page = PAGE_INDEX(PAGE_ALIGN_FORWARD(entry->addr));
-            uint64_t end_page = PAGE_INDEX(entry->addr + entry->len);
+            uint64_t begin_page = PAGE_ADDR(PAGE_ALIGN_FORWARD(entry->addr));
+            uint64_t end_page = PAGE_ADDR(entry->addr + entry->len);
 
             // Check that first page is inside 32-bit address range.
             if (begin_page < MAX_PAGES) {
@@ -154,25 +154,25 @@ static size_t bitmap_init(const struct multiboot* mb, size_t pages, size_t bitma
     }
 
     // Mark the kernel area as allocated.
-    uintptr_t kernel_begin_page = PAGE_INDEX(KERNEL_PHYSICAL_START);
-    uintptr_t kernel_end_page = PAGE_INDEX(PAGE_ALIGN_FORWARD(KERNEL_PHYSICAL_END));
+    uintptr_t kernel_begin_page = PAGE_ADDR(KERNEL_PHYSICAL_START);
+    uintptr_t kernel_end_page = PAGE_ADDR(PAGE_ALIGN_FORWARD(KERNEL_PHYSICAL_END));
     bitmap_mark_pages(kernel_begin_page, kernel_end_page, true);
     free_pages -= (size_t) (kernel_end_page - kernel_begin_page);
 
     // Mark the unused part of the bitmap as free.
-    uintptr_t bitmap_physical_start = (uintptr_t) KERNEL_VIRTUAL_TO_PHYSICAL(BITMAP);
-    uintptr_t bitmap_free_begin_page = PAGE_INDEX(bitmap_physical_start) + bitmap_pages;
-    uintptr_t bitmap_free_end_page = PAGE_INDEX(bitmap_physical_start) + MAX_BITMAP_PAGES;
-    bitmap_mark_pages(bitmap_free_begin_page, bitmap_free_end_page, false);
-    free_pages += (size_t) (bitmap_free_end_page - bitmap_free_begin_page);
+    // uintptr_t bitmap_physical_start = (uintptr_t) KERNEL_VIRTUAL_TO_PHYSICAL(BITMAP);
+    // uintptr_t bitmap_free_begin_page = PAGE_ADDR(bitmap_physical_start) + bitmap_pages;
+    // uintptr_t bitmap_free_end_page = PAGE_ADDR(bitmap_physical_start) + MAX_BITMAP_PAGES;
+    // bitmap_mark_pages(bitmap_free_begin_page, bitmap_free_end_page, false);
+    // free_pages += (size_t) (bitmap_free_end_page - bitmap_free_begin_page);
 
-    // Unmap the free'd bitmap pages from kernel memory.
-    // This should be save to call from here, but when the vmm is more proper
-    // reclaiming the unused parts of the bitmap might need to be delayed until
-    // both the pmm and vmm are fully initialized.
-    for (size_t i = bitmap_pages; i < MAX_BITMAP_PAGES; ++i) {
-        assert(vmm_unmap_page(&BITMAP[i * PAGE_SIZE]) == VMM_SUCCESS);
-    }
+    // // Unmap the free'd bitmap pages from kernel memory.
+    // // This should be save to call from here, but when the vmm is more proper
+    // // reclaiming the unused parts of the bitmap might need to be delayed until
+    // // both the pmm and vmm are fully initialized.
+    // for (size_t i = bitmap_pages; i < MAX_BITMAP_PAGES; ++i) {
+    //     assert(vmm_unmap_page(&BITMAP[i * PAGE_SIZE]) == VMM_SUCCESS);
+    // }
 
     return free_pages;
 }

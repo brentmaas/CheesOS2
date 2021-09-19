@@ -5,10 +5,14 @@
 #include "debug/log.h"
 #include "debug/assert.h"
 
+#include "utility/container_of.h"
+
 #include <stdbool.h>
 
 static struct page_directory VMM_KERNEL_PAGE_DIR;
 static struct page_table VMM_KERNEL_PAGE_TABLE;
+static struct vmm_addrspace VMM_KERNEL_ADDRESS_SPACE;
+static struct vmm_mapping VMM_KERNEL_MAPPING;
 
 __attribute__((section(".bootstrap.text")))
 struct page_directory* vmm_bootstrap(void) {
@@ -25,21 +29,23 @@ struct page_directory* vmm_bootstrap(void) {
     }
 
     // Identity map to prevent generating page faults when enabling paging.
-    // To be removed after
+    // To be removed after.
     pd->entries[0] = (struct page_dir_entry){
         .present = true,
         .write_enable = true,
-        .page_table_address = PAGE_INDEX((uintptr_t) pt)
+        .page_table_address = PAGE_ADDR((uintptr_t) pt)
     };
 
     // The actual kernel page table.
+    // TODO: The kernel virtual and physical starts don't quite make sense. This should
+    // probably start at 0xC0100000 instead of 0xC0000000.
     pd->entries[PAGE_DIR_INDEX(KERNEL_VIRTUAL_START)] = (struct page_dir_entry){
         .present = true,
         .write_enable = true,
-        .page_table_address = PAGE_INDEX((uintptr_t) pt)
+        .page_table_address = PAGE_ADDR((uintptr_t) pt)
     };
 
-    uintptr_t kernel_end_page = PAGE_INDEX(PAGE_ALIGN_FORWARD(KERNEL_PHYSICAL_END));
+    uintptr_t kernel_end_page = PAGE_ADDR(PAGE_ALIGN_FORWARD(KERNEL_PHYSICAL_END));
 
     // Add everything up to kernel_end_addr to the kernel page table
     // kernel.ld guarantees that kernel_end_page fits in the page table
@@ -52,118 +58,75 @@ struct page_directory* vmm_bootstrap(void) {
         };
     }
 
-    // Recursively map the page directory to itself
-    pd->entries[VMM_RECUSIVE_PAGE_DIR_INDEX] = (struct page_dir_entry){
-        .present = true,
-        .write_enable = true,
-        .page_table_address = PAGE_INDEX((uintptr_t) pd),
-    };
-
     return pd;
 }
 
-void vmm_unmap_identity(void) {
+static int vmm_mapping_cmp_base(struct rb_node* lhs, struct rb_node* rhs) {
+    return page_range_cmp_base(
+        &CONTAINER_OF(struct vmm_mapping, node, lhs)->range,
+        &CONTAINER_OF(struct vmm_mapping, node, rhs)->range
+    );
+}
+
+void vmm_init(void) {
+    // Initialize the kernel address space
+    struct vmm_addrspace* addrspace = &VMM_KERNEL_ADDRESS_SPACE;
+
+    addrspace->directory = &VMM_KERNEL_PAGE_DIR;
+    rb_init(&addrspace->mappings, vmm_mapping_cmp_base);
+
+    // TODO: The kernel virtual and physical starts don't quite make sense.
+    struct vmm_mapping* kernel_mapping = &VMM_KERNEL_MAPPING;
+    kernel_mapping->range.base = PAGE_ADDR((uintptr_t) KERNEL_PHYSICAL_TO_VIRTUAL(KERNEL_PHYSICAL_START));
+    kernel_mapping->range.size = PAGE_ADDR(PAGE_ALIGN_FORWARD(KERNEL_PHYSICAL_END) - KERNEL_PHYSICAL_START);
+
+    rb_insert(&addrspace->mappings, &kernel_mapping->node);
+
+    // Clear the identity map
     VMM_KERNEL_PAGE_DIR.entries[0] = (struct page_dir_entry){};
     pt_invalidate_tlb();
 }
 
-struct vmm_recursive_page_table* vmm_current_page_table() {
-    return (struct vmm_recursive_page_table*) (VMM_RECUSIVE_PAGE_DIR_INDEX * PAGE_TABLE_ENTRY_COUNT * PAGE_SIZE);
+struct vmm_addrspace* vmm_kernel_addrspace() {
+    return &VMM_KERNEL_ADDRESS_SPACE;
 }
 
-enum vmm_result vmm_map_page(void* virtual, void* physical, enum vmm_map_flags flags) {
-    uintptr_t vaddr = (uintptr_t) virtual;
-    assert(IS_PAGE_ALIGNED(vaddr));
-
-    uintptr_t paddr = (uintptr_t) physical;
-    assert(IS_PAGE_ALIGNED(paddr));
-
-    size_t pdi = PAGE_DIR_INDEX(vaddr);
-    size_t pti = PAGE_TABLE_INDEX(vaddr);
-
-    struct vmm_recursive_page_table* rpt = vmm_current_page_table();
-
-    struct page_dir_entry* pde = &rpt->page_directory.entries[pdi];
-    if (!pde->present) {
-        // No page table available, so allocate one.
-
-        intptr_t page_table_page = pmm_alloc();
-        if (page_table_page < 0)
-            return VMM_OUT_OF_PHYSICAL_MEMORY;
-
-        *pde = (struct page_dir_entry){
-            .present = true,
-            .page_table_address = page_table_page,
-        };
-    }
-
-    struct page_table_entry* pte = &rpt->page_tables[pdi].entries[pti];
-    if (pte->present && (flags & VMM_MAP_OVERWRITE) == 0) {
-        // Page was previously mapped.
-        return VMM_ALREADY_MAPPED;
-    }
-
-    *pte = (struct page_table_entry){
-        .present = true,
-        .write_enable = (flags & VMM_MAP_WRITABLE) != 0,
-        .user = (flags & VMM_MAP_USER) != 0,
-        .page_address = PAGE_INDEX(paddr)
-    };
-
-    if (flags & VMM_MAP_OVERWRITE) {
-        pt_invalidate_address(virtual);
-    }
-
-    return VMM_SUCCESS;
+bool vmm_is_kernel_addrspace(const struct vmm_addrspace* addrspace) {
+    return addrspace == vmm_kernel_addrspace();
 }
 
-enum vmm_result vmm_unmap_page(void* virtual) {
-    uintptr_t vaddr = (uintptr_t) virtual;
-    size_t pdi = PAGE_DIR_INDEX(vaddr);
-    size_t pti = PAGE_TABLE_INDEX(vaddr);
-
-    struct vmm_recursive_page_table* rpt = vmm_current_page_table();
-
-    // First, check if the page table is mapped at all.
-    struct page_dir_entry* pde = &rpt->page_directory.entries[pdi];
-    if (!pde->present) {
-        log_warn("Tried to unmap %p which was not mapped", virtual);
-        return VMM_NOT_MAPPED;
+struct page_range vmm_addrspace_range(const struct vmm_addrspace* addrspace) {
+    if (vmm_is_kernel_addrspace(addrspace)) {
+        // Kernel address space is from virtual start to the end.
+        // Note: Unsigned overflow here is expected.
+        return (struct page_range){.base = PAGE_ADDR(KERNEL_VIRTUAL_START), .size = PAGE_ADDR(-KERNEL_VIRTUAL_START)};
+    } else {
+        // User address space is from 0 to kernel virtual start.
+        return (struct page_range){.base = 0, .size = PAGE_ADDR(KERNEL_VIRTUAL_START)};
     }
-
-    // Check if the page is mapped at all
-    struct page_table_entry* pte = &rpt->page_tables[pdi].entries[pti];
-    if (!pte->present) {
-        log_warn("Tried to unmap %p which was not mapped", virtual);
-        return VMM_NOT_MAPPED;
-    }
-
-    // remove the page from the table
-    *pte = (struct page_table_entry){};
-    pt_invalidate_address(virtual);
-
-    // TODO: Maybe free page table if it's empty
-    return VMM_SUCCESS;
 }
 
-enum vmm_result vmm_translate(void* virtual, void** physical) {
-    uintptr_t vaddr = (uintptr_t) virtual;
-    size_t pdi = PAGE_DIR_INDEX(vaddr);
-    size_t pti = PAGE_TABLE_INDEX(vaddr);
+void vmm_addrspace_dump_mappings(struct vmm_addrspace* addrspace) {
+    struct page_range range = vmm_addrspace_range(addrspace);
+    log_debug(
+        "Address space range: %p, %u KiB (%zu pages)",
+        (void*) (range.base * PAGE_SIZE),
+        range.size * (PAGE_SIZE / 1024),
+        range.size
+    );
 
-    struct vmm_recursive_page_table* rpt = vmm_current_page_table();
+    log_debug("Mappings:");
 
-    struct page_dir_entry* pde = &rpt->page_directory.entries[pdi];
-    if (!pde->present) {
-        return VMM_NOT_MAPPED;
+    struct rb_node* node = rb_first_node(&addrspace->mappings);
+    while (node) {
+        struct vmm_mapping* mapping = CONTAINER_OF(struct vmm_mapping, node, node);
+        log_debug(
+            "%p, %u KiB (%zu pages)",
+            (void*) (mapping->range.base * PAGE_SIZE),
+            mapping->range.size * (PAGE_SIZE / 1024),
+            mapping->range.size
+        );
+
+        node = rb_next_node(node);
     }
-
-    struct page_table_entry* pte = &rpt->page_tables[pdi].entries[pti];
-    if (!pte->present) {
-        return VMM_NOT_MAPPED;
-    }
-
-    *physical = (void*)((pte->page_address << PAGE_OFFSET_BITS) | PAGE_OFFSET(vaddr));
-
-    return VMM_SUCCESS;
 }
