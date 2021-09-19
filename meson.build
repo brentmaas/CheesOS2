@@ -48,6 +48,7 @@ sources = files(
     'src/memory/gdt.c',
     'src/memory/pmm.c',
     'src/memory/vmm.c',
+    'src/utility/containers/linked_list.c',
     'src/utility/containers/rbtree.c',
     'src/utility/cprintf.c',
 )
