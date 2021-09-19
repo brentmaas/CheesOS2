@@ -15,3 +15,8 @@ pt_invalidate_address:
     mov eax, [esp + 4]
     invlpg [eax]
     ret
+
+pt_load_directory:
+    mov eax, [esp + 4]
+    mov cr3, eax
+    ret
