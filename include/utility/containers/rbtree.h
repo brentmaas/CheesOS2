@@ -50,6 +50,7 @@ void rb_move_node(struct rb_tree* tree, struct rb_node* dst, struct rb_node* src
 
 // Traverse the tree to find a node which compares equal to `node`.
 // Returns `NULL` if the tree contained no such node.
+// Note: This function finds *any* node which compares equal.
 struct rb_node* rb_find(struct rb_tree* tree, struct rb_node* node);
 
 // User-supplied comparison function. This function should return:
@@ -60,24 +61,26 @@ typedef int (*rb_find_cmp_fn)(void* lhs, struct rb_node* rhs);
 
 // Find a node using a user-supplied node comparison function. This removes the need to construct a struct
 // with a node in order to find a value.
+// Note: This function finds *any* node which compares equal.
 struct rb_node* rb_find_by(struct rb_tree* tree, rb_find_cmp_fn cmp, void* value);
 
-// A structure used for iterating (in in-order) over the nodes of a red-black tree.
-// The current node can be accessed using `it->node`.
-struct rb_iterator {
-    struct rb_node* next;
-    struct rb_node* node;
-};
+// Return the node with the highest value that compares equal or more than `value`.
+struct rb_node* rb_find_smallest_not_below_by(struct rb_tree* tree, rb_find_cmp_fn cmp, void* value);
 
-// Initialize a red-black tree node iterator, starting at the root of the tree.
-void rb_iterator_init(struct rb_iterator* it, struct rb_tree* tree);
+// Return the first node that should be visited when performing an in-order traveral.
+// Returns NULL if none such exists.
+struct rb_node* rb_first_node(struct rb_tree* tree);
 
-// Initialize a red-black tree node iterator, starting at a particular node. The first call to
-// `rb_iterator_next` will return the starting node.
-void rb_iterator_init_at(struct rb_iterator* it, struct rb_node* start);
+// Return the last node that should be visited when performing an in-order traveral.
+// Returns NULL if none such exists.
+struct rb_node* rb_last_node(struct rb_tree* tree);
 
-// Advance the iterator to the next node in the tree. Returns `true` if the current node is
-// valid, and `false` if the end has been reached.
-bool rb_iterator_next(struct rb_iterator* it);
+// Given a particular node, returns the next node that should be visited in an in-order traversal.
+// Returns NULL if none such exists.
+struct rb_node* rb_next_node(struct rb_node* node);
+
+// Given a particular node, returns the next node that should be visited in a reversed in-order traversal.
+// Returns NULL if none such exists.
+struct rb_node* rb_prev_node(struct rb_node* node);
 
 #endif

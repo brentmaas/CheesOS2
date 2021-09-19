@@ -1,5 +1,6 @@
 #include "utility/containers/rbtree.h"
 #include "debug/assert.h"
+#include "debug/log.h"
 
 #include <stddef.h>
 
@@ -534,64 +535,94 @@ struct rb_node* rb_find_by(struct rb_tree* tree, rb_find_cmp_fn cmp, void* value
     return NULL;
 }
 
-void rb_iterator_init(struct rb_iterator* it, struct rb_tree* tree) {
-    it->next = tree->root;
-    it->node = NULL;
-}
-
-void rb_iterator_init_at(struct rb_iterator* it, struct rb_node* start) {
-    it->next = start;
-    // We want to make this node be the next node that is visited, and after ward
-    // we want the iterator to advance to the right child. This means that the previous
-    // node is either the left child if it exists, or the parent of not.
-    it->node = start->left ? start->left : start->parent;
-}
-
-bool rb_iterator_next(struct rb_iterator* it) {
-    if (!it->next) {
-        it->node = NULL;
-        return false;
-    }
-
-    struct rb_node* current = it->next;
-    struct rb_node* prev = it->node;
-
-    while (true) {
-        if (current->parent == prev) {
-            // came from parent. Go to left child if exists, or visit and go to right or parent.
-            prev = current;
-            if (current->left) {
-                current = current->left;
-            } else if (current->right) {
-                current = current->right;
-                break;
-            } else {
-                current = current->parent;
-                break;
-            }
-        } else if (current->left == prev) {
-            // came from left child. Visit, and go to right child or parent.
-            prev = current;
-            if (current->right) {
-                current = current->right;
-            } else {
-                current = current->parent;
-            }
-            break;
-        } else if (!current->parent) {
-            // Came from right child and would go to parent, but it doesn't exist.
-            // We're at the end.
-            it->next = NULL;
-            it->node = NULL;
-            return false;
+struct rb_node* rb_find_smallest_not_below_by(struct rb_tree* tree, rb_find_cmp_fn cmp, void* value) {
+    struct rb_node* current = tree->root;
+    struct rb_node* candidate = NULL;
+    while (current) {
+        int order = cmp(value, current);
+        if (order == 0) {
+            return current;
+        } else if (order < 0) {
+            candidate = current;
+            current = current->left;
         } else {
-            // came from right child, go to parent.
-            prev = current;
-            current = current->parent;
+            current = current->right;
         }
     }
 
-    it->next = current;
-    it->node = prev;
-    return true;
+    return candidate;
+}
+
+struct rb_node* rb_first_node(struct rb_tree* tree) {
+    // First node of inorder traversal is the left descendant of the root.
+    struct rb_node* node = tree->root;
+    while (node->left)
+        node = node->left;
+    return node;
+}
+
+struct rb_node* rb_last_node(struct rb_tree* tree) {
+    // Last node of inorder traversal is the right descendant of the root.
+    struct rb_node* node = tree->root;
+    while (node->right)
+        node = node->right;
+    return node;
+}
+
+struct rb_node* rb_next_node(struct rb_node* node) {
+    /*
+        We are currently between the children of `node`. This means that at this point,
+        the left child was already visited, and we should proceed to the right child, or back to the parent if that
+        doesn't exist. This means that the next node is either:
+        - the left descendant of the right child.
+            A
+             \
+              X
+             / \
+            B   X
+        - the right child, if it has no left descedants.
+            A
+             \
+              B
+               \
+                X
+        - the first ancestor of which the child is a left child.
+              B
+             /
+            X
+             \
+              A
+    */
+    if (node->right) {
+        node = node->right;
+        while (node->left)
+            node = node->left;
+        return node;
+    }
+
+    while (node->parent) {
+        if (node == node->parent->left)
+            return node->parent;
+        node = node->parent;
+    }
+
+    return NULL;
+}
+
+struct rb_node* rb_prev_node(struct rb_node* node) {
+    // See rb_next_node, this function just swaps the sides.
+    if (node->left) {
+        node = node->left;
+        while (node->right)
+            node = node->right;
+        return node;
+    }
+
+    while (node->parent) {
+        if (node == node->parent->right)
+            return node->parent;
+        node = node->parent;
+    }
+
+    return NULL;
 }
