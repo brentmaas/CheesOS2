@@ -1,6 +1,6 @@
-#include "memory/address_range.h"
+#include "memory/page_range.h"
 
-int address_range_base_cmp(struct address_range* lhs, struct address_range* rhs) {
+int page_range_cmp_base(struct page_range* lhs, struct page_range* rhs) {
     if (lhs->base < rhs->base)
         return -1;
     else if (lhs->base > rhs->base)
@@ -8,7 +8,7 @@ int address_range_base_cmp(struct address_range* lhs, struct address_range* rhs)
     return 0;
 }
 
-int address_range_size_cmp(struct address_range* lhs, struct address_range* rhs) {
+int page_range_cmp_size(struct page_range* lhs, struct page_range* rhs) {
     if (lhs->size < rhs->size)
         return -1;
     else if (lhs->size > rhs->size)
@@ -16,8 +16,8 @@ int address_range_size_cmp(struct address_range* lhs, struct address_range* rhs)
     return 0;
 }
 
-int address_range_address_cmp(void* lhs, struct address_range* rhs) {
-    uintptr_t addr = (uintptr_t) lhs;
+int page_range_cmp_address(pageaddr_t lhs, struct page_range* rhs) {
+    pageaddr_t addr = (pageaddr_t) lhs;
     if (addr < rhs->base)
         return -1;
     if (addr >= rhs->base + rhs->size)
