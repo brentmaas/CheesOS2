@@ -3,6 +3,7 @@
 
 #include "memory/page_table.h"
 #include "memory/page_range.h"
+#include "memory/virtual/address_allocator.h"
 
 #include "utility/containers/rbtree.h"
 
@@ -16,6 +17,7 @@ struct vmm_mapping {
 struct vmm_addrspace {
     struct page_directory* directory;
     struct rb_tree mappings;
+    struct address_allocator address_allocator;
 };
 
 void vmm_init(void);

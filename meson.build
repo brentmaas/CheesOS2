@@ -44,6 +44,7 @@ sources = files(
     'src/ps2/controller.c',
     'src/ps2/device.c',
     'src/ps2/keyboard.c',
+    'src/memory/virtual/address_allocator.c',
     'src/memory/page_range.c',
     'src/memory/gdt.c',
     'src/memory/pmm.c',
