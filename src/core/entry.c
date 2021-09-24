@@ -16,9 +16,10 @@
 #include "ps2/controller.h"
 #include "ps2/device.h"
 
+#include "shell/shell.h"
+
 #include "debug/log.h"
 #include "debug/console/console.h"
-#include "debug/console/shell.h"
 
 static int sink_serial_cprintf_cbk(void* context, const char* data, size_t size) {
     for (size_t i = 0; i < size; ++i) {
@@ -89,7 +90,7 @@ void kernel_main(const struct multiboot* multiboot) {
     }
 
     log_info("Initialization finished");
-
+    
     console_print("OPPERPYTHON\n");
     console_set_attr(VGA_ATTR_GREEN, VGA_ATTR_RED);
     console_print("IS\n");
@@ -98,12 +99,15 @@ void kernel_main(const struct multiboot* multiboot) {
     console_set_attr(VGA_ATTR_GREEN, VGA_ATTR_BLACK);
     console_print("\x90\x91\x91\x91\x91\x91\x91\x91\x91\x92\n");
     console_set_attr(VGA_ATTR_WHITE, VGA_ATTR_BLACK);
-
+    
     idt_disable();
     idt_make_interrupt_no_status('B', syscall_handler, IDT_GATE_TYPE_INTERRUPT_32, IDT_PRIVILEGE_3 | IDT_FLAG_PRESENT);
     gdt_set_int_stack((void*) 0xC0001000);
     idt_enable();
-
-    log_info("Jumping to usercode at %p", (void*) test_usermode);
-    gdt_jump_to_usermode((void*) test_usermode, (void*) 0xC0000000);
+    
+    //log_info("Jumping to usercode at %p", (void*) test_usermode);
+    //gdt_jump_to_usermode((void*) test_usermode, (void*) 0xC0000000);
+    //log_info("Jumping to usercode at %p", (void*) shell_loop);
+    //gdt_jump_to_usermode((void*) shell_loop, (void*) 0xC0000000);
+    shell_loop();
 }

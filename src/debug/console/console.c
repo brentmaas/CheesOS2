@@ -163,3 +163,18 @@ void console_log_sink(void* context, enum log_level level, const char* file, uns
     console_putchar('\n');
     CONSOLE_STATE.attr = orig_attr;
 }
+
+void console_backspace(void){
+    if(CONSOLE_STATE.col > 0){
+        --CONSOLE_STATE.col;
+        vga_write_char(CONSOLE_STATE.col, CONSOLE_STATE.row, ' ', CONSOLE_STATE.attr);
+    }
+}
+
+void console_print_cursor(void){
+    if(CONSOLE_STATE.col < vga_get_width_chars()) vga_write_char(CONSOLE_STATE.col, CONSOLE_STATE.row, 95, CONSOLE_STATE.attr);
+}
+
+void console_clear_cursor(void){
+    if(CONSOLE_STATE.col < vga_get_width_chars()) vga_write_char(CONSOLE_STATE.col, CONSOLE_STATE.row, ' ', CONSOLE_STATE.attr);
+}

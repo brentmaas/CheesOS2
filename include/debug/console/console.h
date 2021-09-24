@@ -17,5 +17,8 @@ void console_vprintf(const char* format, va_list args);
 void console_printf(const char* format, ...);
 void console_scroll(uint8_t rows);
 void console_log_sink(void*, enum log_level level, const char* file, unsigned line, const char* format, va_list args);
+void console_backspace(void);
+void console_print_cursor(void);
+void console_clear_cursor(void);
 
 #endif
