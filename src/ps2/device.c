@@ -37,9 +37,11 @@ enum ps2_device_response {
 static volatile enum ps2_device_state state_1;
 static volatile uint8_t device_1_last_command[PS2_COMMAND_MAX_SIZE];
 static volatile size_t device_1_last_command_size;
+static volatile uint8_t device_1_last_data;
 static volatile enum ps2_device_state state_2;
 static volatile uint8_t device_2_last_command[PS2_COMMAND_MAX_SIZE];
 static volatile size_t device_2_last_command_size;
+static volatile uint8_t device_2_last_data;
 
 static volatile bool ps2_device_identification_complete;
 static volatile enum ps2_device_type ps2_device_identification;
@@ -48,7 +50,9 @@ void ps2_device_send(enum ps2_device_id device, volatile uint8_t* command, size_
 
 void ps2_device_handle_interrupt(volatile enum ps2_device_state* state) {
     uint8_t data = io_in8(PS2_DEVICE_PORT);
-    log_debug("Current state %u, data: %u (0x%X)", (unsigned)*state, data, data);
+    //log_debug("Current state %u, data: %u (0x%X)", (unsigned)*state, data, data);
+    if(state == &state_1) device_1_last_data = data;
+    else device_2_last_data = data;
     switch(*state) {
         case PS2_STATE_INITIAL:
             break;
@@ -67,7 +71,7 @@ void ps2_device_handle_interrupt(volatile enum ps2_device_state* state) {
             }
             break;
         case PS2_STATE_ID_READ:
-            log_debug("Read id byte: %x", (unsigned)data);
+            //log_debug("Read id byte: %x", (unsigned)data);
             if(data != PS2_DEVICE_TYPE_RESPONSE_MF2_KEYBOARD_FIRST){
                 *state = PS2_STATE_INITIAL;
                 ps2_device_identification_complete = true;
@@ -93,7 +97,7 @@ void ps2_device_handle_interrupt(volatile enum ps2_device_state* state) {
         case PS2_STATE_FAIL:
             break;
     }
-    log_debug("Transitioned to state %u", (unsigned)*state);
+    //log_debug("Transitioned to state %u", (unsigned)*state);
 }
 
 void ps2_device_master_interrupt_callback(uint32_t interrupt, struct interrupt_registers* registers, struct interrupt_parameters* params) {
@@ -101,7 +105,7 @@ void ps2_device_master_interrupt_callback(uint32_t interrupt, struct interrupt_r
     UNUSED(registers);
     UNUSED(params);
 
-    log_debug("Master PS/2 interrupt triggered");
+    //log_debug("Master PS/2 interrupt triggered");
     ps2_device_handle_interrupt(&state_1);
 
     pic_end_interrupt(PIC_MASTER);
@@ -112,7 +116,7 @@ void ps2_device_slave_interrupt_callback(uint32_t interrupt, struct interrupt_re
     UNUSED(registers);
     UNUSED(params);
 
-    log_debug("Slave PS/2 interrupt triggered");
+    //log_debug("Slave PS/2 interrupt triggered");
     ps2_device_handle_interrupt(&state_2);
 
     pic_end_interrupt(PIC_SLAVE);
@@ -165,15 +169,15 @@ void ps2_device_wait_for_response(enum ps2_device_id device) {
 }
 
 void ps2_device_reset(enum ps2_device_id device) {
-    log_debug("Resetting device %u", (unsigned)device);
+    //log_debug("Resetting device %u", (unsigned)device);
     ps2_device_send_command(device, PS2_DEVICE_COMMAND_RESET);
     ps2_device_wait_for_response(device);
 
-    log_debug("End of device reset");
+    //log_debug("End of device reset");
 }
 
 enum ps2_device_type ps2_device_identify(enum ps2_device_id device) {
-    log_debug("Identifying device %u", (unsigned)device);
+    //log_debug("Identifying device %u", (unsigned)device);
     ps2_device_send_command(device, PS2_DEVICE_COMMAND_DISABLE_SCAN);
     //???
     /*if (device == PS2_DEVICE_SECOND) {
@@ -200,7 +204,11 @@ enum ps2_device_type ps2_device_identify(enum ps2_device_id device) {
     
     while(!ps2_device_identification_complete);
 
-    log_debug("End of device identification");
+    //log_debug("End of device identification");
     
     return ps2_device_identification;
+}
+
+uint8_t ps2_device_get_last_data(enum ps2_device_id device){
+    return device == PS2_DEVICE_FIRST ? device_1_last_data : device_2_last_data;
 }
