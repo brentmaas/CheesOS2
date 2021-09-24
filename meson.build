@@ -49,6 +49,7 @@ sources = files(
     'src/memory/pmm.c',
     'src/memory/vmm.c',
     'src/utility/containers/rbtree.c',
+    'src/utility/containers/ringbuffer.c',
     'src/utility/cprintf.c',
 )
 
