@@ -13,53 +13,57 @@ volatile static bool loop = true;
 void shell_do_command(uint8_t* command, size_t length){
     //log_debug("Full line: '%s'", command);
     
-    int argc = 0;
-    int command_length = length;
-    for(size_t i = 0;i < length - 1;++i) if(command[i] == ' '){
-        command_length = i + 1;
-        break;
+    size_t command_length = length;
+    for(size_t i = 0;i < length;++i){
+        if(command[i] == ' '){
+            command_length = i;
+            break;
+        }
     }
+    
+    int argc = 1;
     bool whitespace = true;
-    for(size_t i = command_length - 1;i < length;++i){
-        if((command[i] == ' ' || command[i] == '\0') && !whitespace){
-            ++argc;
-            command[i] = '\0';
-            whitespace = true;
-        }else if(command[i] != ' ' && command[i] != '\0'){
+    for(size_t i = command_length;i < length;++i){
+        if((command[i] != ' ' && command[i] != '\0') && whitespace){
             whitespace = false;
-        }else{
+            ++argc;
+        }else if(command[i] == ' ' || command[i] == '\0'){
+            whitespace = true;
             command[i] = '\0';
         }
     }
+    
     char* argv[argc];
-    argv[0] = (char*) &command[command_length];
-    int j = 1;
-    for(size_t i = command_length + 1;i < length - 1;++i) if(command[i] == '\0'){
-        argv[j] = (char*) &command[i+1];
-        ++j;
+    argv[0] = (char*) command;
+    size_t j = 1;
+    for(size_t i = command_length;i < length;++i){
+        if(command[i] != '\0' && command[i-1] == '\0'){
+            argv[j] = (char*) &command[i];
+            ++j;
+        }
     }
     
-    //log_debug("Command: '%s', length=%i, argc=%i", command, command_length, argc);
+    /*log_debug("Command: '%s', length=%u, argc=%i", command, command_length, argc);
     for(int i = 0;i < argc;++i){
-        //log_debug("    argv[%i]='%s'", i, argv[i]);
-    }
+        log_debug("    argv[%i]='%s'", i, argv[i]);
+    }*/
     
     //Builtin commands
-    if(!strncmp((char*) command, "exit", command_length)){
+    if(!strncmp(argv[0], "exit", command_length)){
         loop = false;
-    }else if(!strncmp((char*) command, "echo", command_length)){
-        if(argc > 0){
-            for(int i = 0;i < argc;++i){
-                if(i > 0) console_putchar(' ');
-                console_printf("%s", argv[i]);
+    }else if(!strncmp(argv[0], "echo", command_length)){
+        if(argc > 1){
+            for(size_t i = command_length;i < length;++i){
+                if(command[i] == '\0') command[i] = ' ';
             }
+            console_printf("%s", argv[1]);
         }
         console_putchar('\n');
-    }else if(!strncmp((char*) command, "help", command_length)){
+    }else if(!strncmp(argv[0], "help", command_length)){
         console_print("'no'\n");
     }else{
         //TODO: run executables
-        console_printf("Unknown command '%s'\n", command);
+        console_printf("Unknown command '%s'\n", argv[0]);
     }
 }
 
@@ -88,7 +92,7 @@ void shell_loop(void){
                 uint8_t line[length+1];
                 line[length] = 0;
                 ringbuffer_read(&rbuffer, line, length);
-                shell_do_command(line, length + 1);
+                shell_do_command(line, length);
                 if(loop) shell_print_header();
             }else if(next == 8 && ringbuffer_length(&rbuffer) > 0){
                 ringbuffer_remove(&rbuffer, 1);

@@ -110,4 +110,6 @@ void kernel_main(const struct multiboot* multiboot) {
     //log_info("Jumping to usercode at %p", (void*) shell_loop);
     //gdt_jump_to_usermode((void*) shell_loop, (void*) 0xC0000000);
     shell_loop();
+    
+    log_debug("End of entry.c");
 }
